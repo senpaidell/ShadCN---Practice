@@ -1,0 +1,11 @@
+# Ignore dependencies in all folders
+node_modules
+**/node_modules
+
+# Ignore environment variables (Protect your passwords!)
+.env
+**/.env
+
+# Ignore build files
+dist
+build

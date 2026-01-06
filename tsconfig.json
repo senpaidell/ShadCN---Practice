@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",           // Points to ROOT src (Backend)
+    "outDir": "./dist",
+    "module": "commonjs",
+    "target": "es2016",
+    
+    "types": ["node"],            // Ensures backend knows 'console', 'process'
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "strict": true,
+    "verbatimModuleSyntax": false, // Keeps backend imports simple
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  
+  // 1. Force it to look ONLY at your backend source folder
+  "include": [
+    "src/**/*"
+  ],
+
+  // 2. CRITICAL: Tell it to IGNORE the frontend folder
+  "exclude": [
+    "node_modules",
+    "shad-practice" // <--- This stops the error!
+  ]
+}
