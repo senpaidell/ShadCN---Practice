@@ -3,11 +3,46 @@ import axios from "axios";
 import { type Student } from "@/types";
 import { StudentForm } from "./components/StudentForm";
 import { Toaster } from "@/components/ui/sonner";
+import { SideBar } from "./components/sidebar";
+import { NavBar } from "./components/navbar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
+import { AppSidebar } from "./components/app-sidebar";
+import { HomePage } from "./components/main-dashboard/homepage";
+import { Layout } from "./layout";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { InventoryPage } from "./components/manage-inventory/inventoryPage";
+import { QuickMode } from "./components/main-dashboard/quickmode";
+import EachTable from "./components/manage-inventory/each-table";
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        path: "/",
+        element: <HomePage />
+      },
+      {
+        path: "/inventory",
+        element: <InventoryPage />
+      },
+      {
+        path: "/quickmode",
+        element: <QuickMode />
+      },
+      {
+        path: "/eachtable",
+        element: <EachTable />
+      }
+    ]
+  }
+]);
 
-function App(){
+function App({children} : {children: React.ReactNode}){
   const [students, setStudents] = useState<Student[]>([]);
 
+  /*
   const fetchStudents = async () => {
 
       try{
@@ -23,11 +58,19 @@ function App(){
   useEffect(() => {
     fetchStudents();
   }, []);
+  */
 
-  return(
+  try {
+    return (
+    <RouterProvider router={router} />
+    
+    
+    /*
     <div className="p-10">
       <h1 className="text-3xl font-bold mb-5">Student Management</h1>
       <StudentForm onSuccess={fetchStudents} />
+
+      
 
       <div className="mt-5 space-y-2">
         {students.map((student) => (
@@ -39,7 +82,12 @@ function App(){
       </div>
       <Toaster richColors theme="system" />
     </div>
+    */
   )
+  } catch (error) {
+    console.log("There is an error");
+  }
+  
 }
 
 export default App;
