@@ -13,6 +13,10 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { InventoryPage } from "./components/manage-inventory/inventoryPage";
 import { QuickMode } from "./components/main-dashboard/quickmode";
 import EachTable from "./components/manage-inventory/each-table";
+import NotificationPage from "./components/notifications/notification-page";
+import ReportsPage from "./components/manage-reports/reports-page";
+import AuditLogsPage from "./components/audit-logs/audits-page";
+import ProfilePage from "./components/profile/profile-page";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +38,22 @@ const router = createBrowserRouter([
       {
         path: "/eachtable",
         element: <EachTable />
+      },
+      {
+        path: "/notifications",
+        element: <NotificationPage />
+      },
+      {
+        path: "/reports",
+        element: <ReportsPage />
+      },
+      {
+        path: "audit-logs",
+        element: <AuditLogsPage />
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />
       }
     ]
   }

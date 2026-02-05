@@ -24,12 +24,12 @@ const items = [
     }, 
     {
         title: "Manage Reports",
-        url: "#",
+        url: "/reports",
         icon: Newspaper,
     }, 
     {
         title: "Audit Logs",
-        url: "#",
+        url: "/audit-logs",
         icon: Settings,
     }, 
 ]
