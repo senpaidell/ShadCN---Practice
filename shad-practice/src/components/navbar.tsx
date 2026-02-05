@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import { CircleUser } from "lucide-react"
 import Badge from '@mui/material/Badge';
 import MailIcon from '@mui/icons-material/Mail';
+import { Link } from "react-router-dom";
 
 export function NavBar() {
     return (
@@ -28,13 +29,17 @@ export function NavBar() {
                 
                 <div className="ml-auto flex items-center gap-x-4">
                     <div className="mail">
-                        <Badge badgeContent={5} color="primary">
-                            <MailIcon sx={{fontSize: 28}} />
-                        </Badge>
+                        <Link to="/notifications">
+                            <Badge badgeContent={5} color="primary">
+                                <MailIcon sx={{fontSize: 28}} />
+                            </Badge>
+                        </Link>
                     </div>
 
-                    <div className="rofile">
-                        <CircleUser size={28} />
+                    <div className="profile">
+                        <Link to="/profile">
+                            <CircleUser size={28} />
+                        </Link>
                     </div>
                 </div>
             </div>
