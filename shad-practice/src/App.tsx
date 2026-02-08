@@ -48,7 +48,7 @@ const router = createBrowserRouter([
         element: <ReportsPage />
       },
       {
-        path: "audit-logs",
+        path: "/audit-logs",
         element: <AuditLogsPage />
       },
       {

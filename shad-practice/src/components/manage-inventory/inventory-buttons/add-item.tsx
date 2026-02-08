@@ -13,7 +13,7 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Checkbox } from "../../ui/checkbox";
 import { Settings2 } from "lucide-react";
-
+import { ComboboxBasic } from "./combo-box";
 
 
 export function AddItem() {
@@ -38,7 +38,7 @@ export function AddItem() {
                         </div>
                         <div className="grid gap-3">
                             <Label htmlFor="category">Category Type</Label>
-                            <Input id="category-1" name="category" defaultValue="E.g. Flour" />
+                            <ComboboxBasic />
                         </div>
                         <div className="grid gap-3">
                             <Label htmlFor="price-1">Price</Label>
