@@ -36,7 +36,7 @@ const router = createBrowserRouter([
         element: <QuickMode />
       },
       {
-        path: "/eachtable",
+        path: "/table/:id",
         element: <EachTable />
       },
       {
