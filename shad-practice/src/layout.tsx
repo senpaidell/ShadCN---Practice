@@ -17,6 +17,7 @@ export function Layout() {
                 <main className="flex-1 p-6">
                     <div className="flex justify-center items-center w-full">
                         <Outlet />
+                        <Toaster position="top-center" richColors closeButton />
                     </div>
                 </main>
             </SidebarInset>

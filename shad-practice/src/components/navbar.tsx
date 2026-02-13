@@ -30,7 +30,7 @@ export function NavBar() {
                 <div className="ml-auto flex items-center gap-x-4">
                     <div className="mail">
                         <Link to="/notifications">
-                            <Badge badgeContent={5} color="primary">
+                            <Badge badgeContent={69} color="primary">
                                 <MailIcon sx={{fontSize: 28}} />
                             </Badge>
                         </Link>
