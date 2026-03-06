@@ -56,7 +56,7 @@ export default function EachTable() {
     useEffect(() => {
         const token = localStorage.getItem("token")
         const fetchTableDetails = async () => {
-            const res = await fetch(`http://localhost:5000/api/tables/${id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
                 method: 'GET',
                 headers: {
                     "Content-Type": "application/json",
@@ -77,7 +77,7 @@ export default function EachTable() {
         const fetchTables = async () => {
             const token = localStorage.getItem("token")
             try {
-                const res = await fetch('http://localhost:5000/api/tables', {
+                const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -101,7 +101,7 @@ export default function EachTable() {
         const fetchTableItems = async () => {
             const token = localStorage.getItem("token")
             try {
-                const res = await fetch(`http://localhost:5000/api/items/${id}`, {
+                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -131,7 +131,7 @@ export default function EachTable() {
         setStatusMessage("Saving your new item...");
         
         try {
-            const res = await fetch('http://localhost:5000/api/items', {
+            const res = await fetch('https://coshts-backend.vercel.app/api/items', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ export default function EachTable() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/items/${editingItem._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/items/${editingItem._id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(editFormData)
@@ -208,7 +208,7 @@ export default function EachTable() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/items/${deletingItem._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/items/${deletingItem._id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

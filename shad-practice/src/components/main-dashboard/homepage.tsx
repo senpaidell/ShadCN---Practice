@@ -59,7 +59,7 @@ export function HomePage() {
         const fetchUsers = async () => {
             const token = localStorage.getItem("token");
             try {
-                const res = await fetch("http://localhost:5000/api/users/getusers", {
+                const res = await fetch("https://coshts-backend.vercel.app/api/users/getusers", {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export function HomePage() {
             const token = localStorage.getItem("token")
             console.log("Homepage FetchTables")
             try {
-                const res = await fetch("http://localhost:5000/api/tables", {
+                const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -116,7 +116,7 @@ export function HomePage() {
     useEffect(() => {
         const token = localStorage.getItem("token")
         const fetchTableDetails = async () => {
-            const res = await fetch(`http://localhost:5000/api/tables/${id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
                 method: 'GET',
                 headers: {
                     "Content-Type": "application/json",
@@ -149,7 +149,7 @@ export function HomePage() {
         const token = localStorage.getItem("token")
         const fetchTableItems = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/items/${id}`, {
+                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -193,7 +193,7 @@ export function HomePage() {
     const fetchTileItems = async () => {
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch("http://localhost:5000/api/tileItems", {
+            const res = await fetch("https://coshts-backend.vercel.app/api/tileItems", {
                 method: 'GET',
                 headers: {
                     "Content-Type": "application/json",

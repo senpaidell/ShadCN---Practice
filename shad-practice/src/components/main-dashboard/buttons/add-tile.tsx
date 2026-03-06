@@ -58,7 +58,7 @@ export default function AddTile({onSaveSuccess}: AddTileProps) {
         const fetchTables = async () => {
             const token = localStorage.getItem("token")
             try {
-                const res = await fetch('http://localhost:5000/api/tables', {
+                const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -84,7 +84,7 @@ export default function AddTile({onSaveSuccess}: AddTileProps) {
         if (!tableID) return;
         setIsItemsLoading(true);    
         try {
-            const res = await fetch(`http://localhost:5000/api/items/${tableID}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${tableID}`, {
                 method: 'GET',
                 headers: {
                     "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export default function AddTile({onSaveSuccess}: AddTileProps) {
     const uploadItemTableID = async (itemID: any, itemTableID: any) => {
         const token = localStorage.getItem("token")
         try {
-            const res = await fetch('http://localhost:5000/api/tileItems', {
+            const res = await fetch('https://coshts-backend.vercel.app/api/tileItems', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
