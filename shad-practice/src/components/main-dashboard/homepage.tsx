@@ -38,15 +38,20 @@ export function HomePage() {
     const navigate = useNavigate();
 
     const hours = new Date().getHours();
-
-
     
-    const tilesRemaining = tileItems?.map((item) => ({
-        id: item._id,
-        name: item.itemId?.name,
-        percentage: Math.round((item.itemId.inStock / (item.itemId.inStock + item.itemId.newStock)) * 100),
-        table: item.tableId?.name
-    }))
+    const tilesRemaining = tileItems?.filter((item) => item.itemId !== null).map((item) => {
+        const inStock = item.itemId.inStock || 0;
+        const newStock = item.itemId.newStock || 0;
+        const totalStock = inStock + newStock;
+
+        const percentage = totalStock > 0 ? Math.round((inStock / totalStock) * 100) : 0;
+        return {
+            id: item._id,
+            name: item.itemId?.name,
+            percentage: percentage,
+            table: item.tableId?.name
+        }
+    })
 
     console.log("Tiles Remaining", tilesRemaining)
     console.log("Users Table", users)
