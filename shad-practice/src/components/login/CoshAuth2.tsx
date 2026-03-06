@@ -59,7 +59,7 @@ const CoshAuth: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('https://coshts-backend.vercel.app/users/login', {
+      const res = await fetch('https://coshts-backend.vercel.app/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -120,7 +120,7 @@ const CoshAuth: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch('https://coshts-backend.vercel.app/users/signup', {
+      const res = await fetch('https://coshts-backend.vercel.app/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email, password })
@@ -150,7 +150,7 @@ const CoshAuth: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch('https://coshts-backend.vercel.app//api/users/verify', {
+      const res = await fetch('https://coshts-backend.vercel.app/api/users/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
