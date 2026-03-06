@@ -28,7 +28,7 @@ export function TableSelector() {
           const fetchTables = async () => {
               console.log("I am inside fetchTables")
               try {
-                  const res = await fetch('http://localhost:5000/api/tables')
+                  const res = await fetch('https://coshts-backend.vercel.app/api/tables')
                   if (!res.ok) {
                       throw new Error("Failed to fetch");
                   }

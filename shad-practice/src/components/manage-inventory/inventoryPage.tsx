@@ -54,7 +54,7 @@ export function InventoryPage() {
         const fetchTables = async () => {
             const token = localStorage.getItem("token");
             try {
-                const res = await fetch('http://localhost:5000/api/tables', {
+                const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
                     method: 'GET',
                     headers: {
                         "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export function InventoryPage() {
         setStatusMessage("Saving your new table...");
 
         try {
-            const res = await fetch('http://localhost:5000/api/tables', {
+            const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
@@ -130,7 +130,7 @@ export function InventoryPage() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/tables/${editingTable._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${editingTable._id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ name: newTableName })
@@ -162,7 +162,7 @@ export function InventoryPage() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/tables/${deletingTable._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/tables/${deletingTable._id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
