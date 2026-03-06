@@ -49,7 +49,7 @@ export function TableSelector() {
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Fruits</SelectLabel>
+          <SelectLabel>Tables</SelectLabel>
 
           {tables.map((item) => (
               <SelectItem className="cursor-pointer" key={item._id} value={item._id}>{item.name} Table</SelectItem>

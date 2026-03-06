@@ -1,50 +1,113 @@
-import mongoose, { Document, Schema } from "mongoose";
-import { number, z } from "zod";
+import mongoose, {Schema, Document} from "mongoose";
 
-export const ItemSchemaZod = z.object({
-    itemName: z.string().min(3, "Item name must be at least 3 characters"),
-    quantity: z.number().min(1, "Quantity shouldn't be left out"),
-    unit: z.string().min(3, "Unit must be at least 3 characters"),
-    reOrderLevel: z.number().min(1, "Minimum of one character"),
-    price: z.number().min(1, "Minimum of one character"),
-    expirationDate: z.string(),
-    image: z.string()
-})
+interface IItem extends Document {
+    tableId: mongoose.Types.ObjectId;
+    name: string;
+    volume?: number;
+    inStock: number;
+    newStock: number;
+    balance: number;
+    expiration?: Date;
+    user: mongoose.Types.ObjectId;
+}
 
-export type ItemType = z.infer<typeof ItemSchemaZod>
+//FIRST ITERATION
+// Saving just for backup
+// const ItemSchema = new mongoose.Schema({
+//     tableId: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'InventoryTable',
+//         required: true
+//     },
+//     name: {
+//         type: String,
+//         required: true
+//     },
+//     values: {
+//         type: Map,
+//         of: mongoose.Schema.Types.Mixed
+//     },
+// },
+//     {
+//         timestamps: true
+//     }
+// )
 
-interface IItemModel extends ItemType, Document { }
+//SECOND ITERATION
+// const ItemSchema = new Schema<IItem>({
+//     tableId: {
+//         type: Schema.Types.ObjectId,
+//         ref: 'InventoryTable',
+//         required: true
+//     },
+//     name: {
+//         type: String,
+//         required: true,
+//     },
+//     volume: {
+//         type: Number,
+//         default: 0
+//     },
+//     inStock: {
+//         type: Number,
+//         default: 0
+//     },
+//     newStock: {
+//         type: Number,
+//         default: 0
+//     },
+//     balance: {
+//         type: Number,
+//         default: 0
+//     },
+//     expiration: {
+//         type: Date
+//     }
+// },
+// {
+//     timestamps: true
+// }
+// )
 
-const ItemSchema = new Schema(
-    {
-        itemName: {
-            type: String,
-            required: true
-        },
-        quantity: {
-            type: Number,
-            required: true,
-        },
-        unit: {
-            type: String,
-            required: true
-        },
-        reOrderLevel: {
-            type: Number,
-            required: true
-        },
-        price: {
-            type: Number,
-            required: true
-        },
-        expirationDate: {
-            type: String,
-            required: true
-        },
-        image: {
-            type: String,
-        }
+
+// 2. Define the Schema (Flat structure)
+const ItemSchema = new Schema<IItem>({
+    tableId: {
+        type: Schema.Types.ObjectId,
+        ref: 'InventoryTable',
+        required: true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    name: {
+        type: String,
+        required: true,
+    },
+    volume: {
+        type: Number,
+        default: 0
+    },
+    inStock: {
+        type: Number,
+        default: 0
+    },
+    newStock: {
+        type: Number,
+        default: 0
+    },
+    balance: {
+        type: Number,
+        default: 0
+    },
+    expiration: {
+        type: Date
     }
-)
+},
+{
+    timestamps: true
+});
 
-export const Item = mongoose.model<IItemModel>("Item", ItemSchema);
+export const Item = mongoose.models.Item ||mongoose.model<IItem>("Item", ItemSchema);

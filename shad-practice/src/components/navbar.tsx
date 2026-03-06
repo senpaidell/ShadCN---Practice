@@ -16,7 +16,7 @@ import { Link } from "react-router-dom";
 export function NavBar() {
     return (
         <>
-            <div className="relative p-3 h-16 w-dvw flex flex-row gap-x-2 items-center">
+            <div className="p-3 h-16 w-dvw flex flex-row gap-x-2 items-center">
                 <div className="searchBar absolute left-1/2 transform -translate-x-1/2 flex w-auto">
                     <InputGroup className="w-fit sm:w-[25dvw] h-fit">
                         <InputGroupInput placeholder="Search" />

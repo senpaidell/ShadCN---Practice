@@ -101,16 +101,16 @@ export function QuickMode() {
                 
                 <div className="flex flex-row items-center">
                         <h5 className="text-neutral-400">Click the item you made today for automatic deduction</h5>
-                        <Button variant="outline" className="ml-auto cursor-pointer" onClick={() => console.log("Button Pressed")}><Link to="/">Go Back to Home</Link></Button>
+                        <Button variant="outline" className="ml-auto cursor-pointer" onClick={() => console.log("Button Pressed")}><Link to="/dashboard">Go Back to Home</Link></Button>
                 </div>
 
                 <div className="flex w-full">
                     <Tabs defaultValue="Stock Out" className="sm:ml-auto sm:w-96 w-full">
                         <TabsList className="w-full">
-                            <TabsTrigger value="Stock In" onClick={() => setPageTitle("In")}>
+                            <TabsTrigger value="Stock In" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("In")}>
                                 Stock In
                             </TabsTrigger>
-                            <TabsTrigger value="Stock Out" onClick={() => setPageTitle("Out")}>
+                            <TabsTrigger value="Stock Out" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("Out")}>
                                 Stock Out
                             </TabsTrigger>
                         </TabsList>

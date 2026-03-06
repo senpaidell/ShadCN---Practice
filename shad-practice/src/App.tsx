@@ -17,14 +17,30 @@ import NotificationPage from "./components/notifications/notification-page";
 import ReportsPage from "./components/manage-reports/reports-page";
 import AuditLogsPage from "./components/audit-logs/audits-page";
 import ProfilePage from "./components/profile/profile-page";
+import SignUp from "./components/login/signup";
+import Login from "./components/login/login";
+import ProtectedRoute from "./components/login/ProtectedRoute";
+import CoshAuth from "./components/login/CoshAuth2";
 
 const router = createBrowserRouter([
   {
+    path: "/login", 
+    element: <CoshAuth />
+  },
+  {
+    path: "/signup",
+    element: <SignUp />
+  },
+  {
     path: "/",
-    element: <Layout />,
+    // element: <Layout />,
+    element: <ProtectedRoute />,
     children: [
+    {
+      element: <Layout />,
+      children: [
       {
-        path: "/",
+        index: true,
         element: <HomePage />
       },
       {
@@ -54,8 +70,13 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <ProfilePage />
-      }
-    ]
+      },
+      {
+        path: "/dashboard/:id?",
+        element: <HomePage />
+      },
+      ]
+    }]
   }
 ]);
 
