@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { createStudent, getStudents} from "../controllers/studentController";
+import {
+    createStudent,
+    getStudents,
+} from "../controllers/studentController";
 
 const router = Router();
 
+//STUDENT (SAMPLE)
 router.post('/', createStudent);
 router.get('/', getStudents);
 

@@ -7,14 +7,17 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar
+    useSidebar,
+    SidebarFooter
 } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom";
+import logo from "@/assets/cosh-anniv-logo.png";
+import { LogOut } from "./login/logout";
 
 const items = [
     {
         title: "Main Dashboard",
-        url: "/",
+        url: "/dashboard",
         icon: Home,
     }, 
     {
@@ -41,11 +44,13 @@ export function AppSidebar() {
         <Sidebar>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>COSH</SidebarGroupLabel>
+                    <div className="flex justify-center">
+                        <img src={logo} className="h-36" />
+                    </div>
                 <SidebarGroupContent>
                     <SidebarMenu>
                         {items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
+                        <SidebarMenuItem key={item.title} className="">
                             <SidebarMenuButton asChild>
                                     <Link to={item.url} onClick={() => {
                                         if (isMobile) {
@@ -62,6 +67,9 @@ export function AppSidebar() {
                 </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <LogOut />
+            </SidebarFooter>
         </Sidebar>
     )
 }
