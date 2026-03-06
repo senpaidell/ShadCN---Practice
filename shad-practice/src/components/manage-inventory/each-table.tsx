@@ -177,7 +177,7 @@ export default function EachTable() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`https://coshts-backend.vercel.app/items/${editingItem._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${editingItem._id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(editFormData)
@@ -208,7 +208,7 @@ export default function EachTable() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`https://coshts-backend.vercel.app/items/${deletingItem._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${deletingItem._id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
