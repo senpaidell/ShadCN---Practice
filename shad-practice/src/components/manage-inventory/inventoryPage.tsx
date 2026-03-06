@@ -162,7 +162,7 @@ export function InventoryPage() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`https://coshts-backend.vercel.app/tables/${deletingTable._id}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${deletingTable._id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
