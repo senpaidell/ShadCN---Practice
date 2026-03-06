@@ -80,7 +80,7 @@ const router = createBrowserRouter([
   }
 ]);
 
-function App({children} : {children: React.ReactNode}){
+function App({children} : {children?: React.ReactNode}){
   const [students, setStudents] = useState<Student[]>([]);
 
   /*
