@@ -23,14 +23,18 @@ let cached = (global as any).mongoose || { conn: null, promise: null };
 (global as any).mongoose = cached;
 
 export const connectDB = async () => {
-  if (cached.conn) return cached.conn;
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
+  }
 
   if (!MONGO_URI) throw new Error("Check your .env file - MONGO_URI is missing.");
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI).then((m) => m);
+  if (!cached.promise || mongoose.connection.readyState === 0) {
+    cached.promise = mongoose.connect(MONGO_URI, {
+      bufferCommands: false, // Disable buffering for serverless
+    }).then((m) => m);
   }
-  
+
   cached.conn = await cached.promise;
   return cached.conn;
 };
