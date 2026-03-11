@@ -123,9 +123,7 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
                       </div>
                     ))}
                   </div>
-
-              
-
+                  
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" className="cursor-pointer" onClick={()=> setOpen(false)}>Cancel</Button>

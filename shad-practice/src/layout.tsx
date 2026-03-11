@@ -8,22 +8,22 @@ export function Layout() {
     return (
         <SidebarProvider>
             <div className="flex h-screen w-full overflow-hidden">
-            <AppSidebar />
-            <SidebarInset className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-                <header className="sticky top-0 z-50 shrink-0 flex h-16 items-center border-b px-4 bg-background">
-                    <SidebarTrigger className="-ml-1" />
-                    <NavBar />
-                </header>
+                <AppSidebar />
+                <SidebarInset className="relative min-w-0 flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                    <header className="sticky top-0 z-50 shrink-0 flex h-16 items-center border-b px-4 bg-background">
+                        <SidebarTrigger className="-ml-1" />
+                        <NavBar />
+                    </header>
 
-                <main className="flex-1 p-6">
-                    <div className="flex justify-center items-center w-full">
-                        <Outlet />
-                        <Toaster position="top-center" richColors closeButton={false} duration={2000}/>
-                    </div>
-                </main>
-            </SidebarInset>
+                    <main className="flex-1 p-6 min-w-0">
+                        <div className="flex justify-center items-center w-full">
+                            <Outlet />
+                            <Toaster position="top-center" richColors closeButton={false} duration={2000} />
+                        </div>
+                    </main>
+                </SidebarInset>
             </div>
-            
+
         </SidebarProvider>
     )
 }

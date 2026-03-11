@@ -13,9 +13,6 @@ export default function Login() {
 
     const loginUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-
-
-
         try {
             const res = await fetch('http://localhost:5000/api/users/login', {
                 method: 'POST',
