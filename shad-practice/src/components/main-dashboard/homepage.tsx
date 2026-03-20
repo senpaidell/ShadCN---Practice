@@ -234,14 +234,13 @@ export function HomePage() {
 
                 <div className="flex flex-row items-center">
                     <h5 className="text-neutral-400">Remaining Items Left</h5>
-                    <Button className="ml-auto cursor-pointer"><Link to="/quickmode">Quick Mode</Link></Button>
+                    <Link to="/quickmode" className="ml-auto"><Button className="cursor-pointer">Quick Mode</Button></Link>
                 </div>
 
                 <div className="itemsRemaining flex flex-col xl:flex-row gap-4 w-full">
 
                     <div className="itemsRemaining flex flex-col xl:flex-row gap-4 w-full">
 
-                        {/* 1. CAROUSEL CONTAINER (Fluid to fill the space) */}
                         <div className="relative flex-grow min-w-0 w-full">
                             <Carousel
                                 opts={{
@@ -287,7 +286,6 @@ export function HomePage() {
                             </Carousel>
                         </div>
 
-                        {/* 2. STATIC ADD TILE BUTTON CONTAINER */}
                         <div className="flex-shrink-0 w-full xl:w-[280px]">
                             <AddTile onSaveSuccess={fetchTileItems} />
                         </div>

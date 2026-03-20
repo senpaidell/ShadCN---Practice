@@ -16,7 +16,7 @@ const MONGO_URI = process.env.MONGO_URI;
 
 // Better debugging: check if URI exists before trying to connect
 if (!MONGO_URI) {
-  console.error("❌ ERROR: MONGO_URI is not defined in your environment variables!");
+  console.error("ERROR: MONGO_URI is not defined in your environment variables!");
 }
 
 let cached = (global as any).mongoose || { conn: null, promise: null };
