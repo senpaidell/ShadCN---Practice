@@ -2,9 +2,9 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
 import {
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
 
 import {
@@ -39,22 +39,19 @@ export function DataTable<TData, TValue>({
             <TableRow key={headerGroup.id} className="border-neutral-800 hover:bg-neutral-900">
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead 
-                    key={header.id} 
-                    // Added z-20, background clip, and a left border for a sharper floating edge
-                    className={`text-neutral-400 ${
-                    header.column.id === "actions" 
-                    // Mobile: Sticky with background/shadow. Desktop (sm): Static, transparent, no shadow.
-                    ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0" 
-                    : ""
-                    }`}
+                  <TableHead
+                    key={header.id}
+                    className={`text-neutral-400 ${header.column.id === "actions"
+                      ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0"
+                      : ""
+                      }`}
                   >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 )
               })}
@@ -70,15 +67,13 @@ export function DataTable<TData, TValue>({
                 className="border-neutral-800 hover:bg-neutral-800/50 group"
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell 
+                  <TableCell
                     key={cell.id}
-                    // Matched the sticky styles for the cell
                     className={
-                    cell.column.id === "actions" 
-                    // Same logic here. Because it becomes transparent on desktop, the row's normal hover effect will automatically show through!
-                    ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0" 
-                    : ""
-                  }
+                      cell.column.id === "actions"
+                        ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0"
+                        : ""
+                    }
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>

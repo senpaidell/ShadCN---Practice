@@ -24,7 +24,7 @@ import CoshAuth from "./components/login/CoshAuth2";
 
 const router = createBrowserRouter([
   {
-    path: "/login", 
+    path: "/login",
     element: <CoshAuth />
   },
   {
@@ -36,51 +36,51 @@ const router = createBrowserRouter([
     // element: <Layout />,
     element: <ProtectedRoute />,
     children: [
-    {
-      element: <Layout />,
-      children: [
       {
-        index: true,
-        element: <HomePage />
-      },
-      {
-        path: "/inventory",
-        element: <InventoryPage />
-      },
-      {
-        path: "/quickmode",
-        element: <QuickMode />
-      },
-      {
-        path: "/table/:id",
-        element: <EachTable />
-      },
-      {
-        path: "/notifications",
-        element: <NotificationPage />
-      },
-      {
-        path: "/reports",
-        element: <ReportsPage />
-      },
-      {
-        path: "/audit-logs",
-        element: <AuditLogsPage />
-      },
-      {
-        path: "/profile",
-        element: <ProfilePage />
-      },
-      {
-        path: "/dashboard/:id?",
-        element: <HomePage />
-      },
-      ]
-    }]
+        element: <Layout />,
+        children: [
+          {
+            index: true,
+            element: <HomePage />
+          },
+          {
+            path: "/inventory",
+            element: <InventoryPage />
+          },
+          {
+            path: "/quickmode/:id?",
+            element: <QuickMode />
+          },
+          {
+            path: "/table/:id",
+            element: <EachTable />
+          },
+          {
+            path: "/notifications",
+            element: <NotificationPage />
+          },
+          {
+            path: "/reports",
+            element: <ReportsPage />
+          },
+          {
+            path: "/audit-logs",
+            element: <AuditLogsPage />
+          },
+          {
+            path: "/profile",
+            element: <ProfilePage />
+          },
+          {
+            path: "/dashboard/:id?",
+            element: <HomePage />
+          },
+        ]
+      }]
   }
 ]);
 
-function App({children} : {children?: React.ReactNode}){
+function App({ children }: { children?: React.ReactNode }) {
   const [students, setStudents] = useState<Student[]>([]);
 
   /*
@@ -103,32 +103,32 @@ function App({children} : {children?: React.ReactNode}){
 
   try {
     return (
-    <RouterProvider router={router} />
-    
-    
-    /*
-    <div className="p-10">
-      <h1 className="text-3xl font-bold mb-5">Student Management</h1>
-      <StudentForm onSuccess={fetchStudents} />
+      <RouterProvider router={router} />
 
-      
 
-      <div className="mt-5 space-y-2">
-        {students.map((student) => (
-        <div key={student._id} className="p-4 border rounded shadow">
-          <h2 className="font-bold">{student.name}</h2>
-          <p className="text-gray-500">{student.course}</p>
+      /*
+      <div className="p-10">
+        <h1 className="text-3xl font-bold mb-5">Student Management</h1>
+        <StudentForm onSuccess={fetchStudents} />
+  
+        
+  
+        <div className="mt-5 space-y-2">
+          {students.map((student) => (
+          <div key={student._id} className="p-4 border rounded shadow">
+            <h2 className="font-bold">{student.name}</h2>
+            <p className="text-gray-500">{student.course}</p>
+          </div>
+          ))}
         </div>
-        ))}
+        <Toaster richColors theme="system" />
       </div>
-      <Toaster richColors theme="system" />
-    </div>
-    */
-  )
+      */
+    )
   } catch (error) {
     console.log("There is an error");
   }
-  
+
 }
 
 export default App;

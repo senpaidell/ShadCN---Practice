@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); // 1. Load env vars first!
+dotenv.config();
 
 import express, { Request, Response } from "express";
 import cors from "cors";
@@ -9,29 +9,32 @@ import userRouter from "./routes/userRoutes";
 import itemRouter from "./routes/itemRoutes";
 import inventoryTableRoutes from "./routes/inventoryRoutes";
 import tileItemRouter from "./routes/tileItemRoutes";
+import mongoose from "mongoose";
 
 const app = express();
 
-// Middleware
-app.use(cors());
+const corsOptions = {
+    origin: [
+        'https://cosh-inventory.vercel.app',
+        'http://localhost:5173'
+    ],
+    credetials: true,
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// 2. The "Start" function for immediate feedback
 const startServer = async () => {
     try {
-        // This ensures the connection is established or retrieved from cache 
-        // as soon as the file is executed
-        await connectDB(); 
-        console.log("✅ MongoDB Connection Attempt Finished");
+        await connectDB();
+        console.log("MongoDB Connection Attempt Finished");
     } catch (err) {
-        console.error("❌ Pre-connection failed:", err);
+        console.error("Pre-connection failed:", err);
     }
 };
 
-// Execute the connection logic
 startServer();
 
-// 3. Keep the safety middleware for Vercel
 app.use(async (req, res, next) => {
     try {
         await connectDB();
@@ -52,6 +55,17 @@ app.get('/', (req: Request, res: Response) => {
     res.json({ message: "Hello from TypeScript Backend on Vercel" });
 });
 
+app.get('/health', (req, res) => {
+    const isDbConnected = mongoose.connection.readyState === 1;
+
+    res.status(200).json({
+        status: 'UP',
+        uptime: process.uptime(),
+        database: isDbConnected ? 'Connected' : 'Disconnected',
+        timestamp: new Date().toISOString()
+    })
+})
+
 // For local development
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 5000;
@@ -60,5 +74,4 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// Export for Vercel
 export default app;

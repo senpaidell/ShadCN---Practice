@@ -4,17 +4,9 @@ import { PieChartComponent } from "../charts/piechart";
 import { ToolTipCosh } from "../charts/tooltipchart";
 import { Link } from "react-router-dom";
 import { Image } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-
-
-const items = [
-    {
-        id: 1,
-        name: "Vince"
-    },
-]
+import { useParams } from "react-router-dom";
 
 const itemsOptions = [
     {
@@ -89,19 +81,108 @@ const itemsOptions = [
     },
 ]
 
-export function QuickMode() {
-    const [pageTitle, setPageTitle] = useState("Mode"); 
+interface InventoryTable {
+    _id: string,
+    name: string,
+    attributes: string[],
+    icon: any,
+    createdAt: string,
+    url: string
+}
 
+export function QuickMode() {
+    const [pageTitle, setPageTitle] = useState("Mode");
+    const [tables, setTables] = useState<InventoryTable[]>([]);
+    const [isLoading, setIsLoading] = useState(true)
+    const [rows, setRows] = useState<any[]>([])
+    const { id } = useParams()
+    const [tableID, setTableID] = useState<string | undefined>();
+    const [items, setItems] = useState<any[] | null>(null);
+    useEffect(() => {
+        const fetchTables = async () => {
+            const token = localStorage.getItem("token")
+            try {
+                const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                if (!res.ok) throw new Error("Failed to fetch Quick Mode")
+
+                const data = await res.json()
+                setTables(data)
+            } catch (error) {
+                console.log("Error loading fetchTables on Add-Tile", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchTables();
+    }, [id])
+
+    useEffect(() => {
+        const fetchTableDetails = async () => {
+            const token = localStorage.getItem("token");
+            if (!tableID) return;
+            try {
+                const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                if (!res.ok) throw new Error("Error fetching table items");
+                const data = await res.json();
+                setRows(data)
+            } catch (error) {
+                console.log("Error fetching table items", error)
+            }
+        }
+        fetchTableDetails()
+    }, [id])
+
+    useEffect(() => {
+        console.log("Use effect is working?")
+        const token = localStorage.getItem("token");
+        const fetchTableItems = async () => {
+            try {
+                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                if (!res.ok) throw new Error("Error fetching actual items")
+                const data = await res.json();
+                setItems(data);
+                console.log("Here is the data: ")
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        if (id) {
+            fetchTableItems()
+        } else {
+            console.log("id is not being called")
+        }
+    }, [id])
+
+    console.log("Quick Mode")
+    console.log(items)
     return (
         <>
             <div className="w-screen sm:p-10 p-2 flex flex-col gap-y-4">
                 <div className="text-3xl font-bold">
                     Quick Stock {pageTitle}
                 </div>
-                
+
                 <div className="flex flex-row items-center">
-                        <h5 className="text-neutral-400">Click the item you made today for automatic deduction</h5>
-                        <Button variant="outline" className="ml-auto cursor-pointer" onClick={() => console.log("Button Pressed")}><Link to="/dashboard">Go Back to Home</Link></Button>
+                    <h5 className="text-neutral-400">Click the item you made today for automatic deduction</h5>
+                    <Link to="/dashboard" className="ml-auto"><Button variant="outline" className="cursor-pointer" onClick={() => console.log("Button Pressed")}>Go Back to Home</Button></Link>
                 </div>
 
                 <div className="flex w-full">
@@ -118,14 +199,14 @@ export function QuickMode() {
                 </div>
 
                 <div className="h-[64vh]">
-                    <div className="grid grid-cols-3 xl:grid-cols-6 h-full justify-between gap-2">    
-                        {itemsOptions.map((item) => (
-                            <button onClick={() => console.log("Item Clicked " + item.name + " " + item.id)} className="flex flex-col hover:brightness-125 cursor-pointer w-fill h-fill border-1 flex justify-center items-center border-white/10 rounded-[0.625rem] bg-neutral-900">
-                                <div>{item.icon}</div>
+                    <div className="grid grid-cols-3 xl:grid-cols-6 h-full justify-between gap-2">
+                        {items?.map((item) => (
+                            <button key={item.id} onClick={() => console.log("Item Clicked " + item.name + " " + item.id)} className="flex flex-col hover:brightness-125 cursor-pointer w-fill h-fill border-1 flex justify-center items-center border-white/10 rounded-[0.625rem] bg-neutral-900">
+                                <div><Image size={32} /></div>
                                 <div>{item.name}</div>
                             </button>
                         ))}
-                    </div>                    
+                    </div>
                 </div>
 
                 <div className="flex">
