@@ -1,12 +1,3 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { type Student } from "@/types";
-import { StudentForm } from "./components/StudentForm";
-import { Toaster } from "@/components/ui/sonner";
-import { SideBar } from "./components/sidebar";
-import { NavBar } from "./components/navbar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
-import { AppSidebar } from "./components/app-sidebar";
 import { HomePage } from "./components/main-dashboard/homepage";
 import { Layout } from "./layout";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -18,9 +9,11 @@ import ReportsPage from "./components/manage-reports/reports-page";
 import AuditLogsPage from "./components/audit-logs/audits-page";
 import ProfilePage from "./components/profile/profile-page";
 import SignUp from "./components/login/signup";
-import Login from "./components/login/login";
 import ProtectedRoute from "./components/login/ProtectedRoute";
 import CoshAuth from "./components/login/CoshAuth2";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient();
 
 const router = createBrowserRouter([
   {
@@ -80,50 +73,13 @@ const router = createBrowserRouter([
   }
 ]);
 
-function App({ children }: { children?: React.ReactNode }) {
-  const [students, setStudents] = useState<Student[]>([]);
-
-  /*
-  const fetchStudents = async () => {
-
-      try{
-        const response = await axios.get("/api/students");
-        console.log("Data from Server:", response.data);
-        setStudents(response.data);
-      } catch (error){
-        console.error("Error fetching data: ", error);
-      }
-
-  };
-  
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-  */
-
+function App() {
   try {
     return (
-      <RouterProvider router={router} />
 
-
-      /*
-      <div className="p-10">
-        <h1 className="text-3xl font-bold mb-5">Student Management</h1>
-        <StudentForm onSuccess={fetchStudents} />
-  
-        
-  
-        <div className="mt-5 space-y-2">
-          {students.map((student) => (
-          <div key={student._id} className="p-4 border rounded shadow">
-            <h2 className="font-bold">{student.name}</h2>
-            <p className="text-gray-500">{student.course}</p>
-          </div>
-          ))}
-        </div>
-        <Toaster richColors theme="system" />
-      </div>
-      */
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
     )
   } catch (error) {
     console.log("There is an error");

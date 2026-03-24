@@ -199,8 +199,8 @@ export default function AddTile({ onSaveSuccess }: AddTileProps) {
                         <div className={tableOpen ? "hidden" : "block flex flex-col gap-y-2 "}>
                             {isLoading ? ([...Array(3)].map((_, i) => (<Skeleton key={i} className="h-[74px] w-full" />))) : (
                                 tables.length === 0 ? (<div className="flex justify-center items-center h-full min-h-[200px]"><span className="text-neutral-500">No tables found!</span></div>) : tables.map((table, index) => (
-                                    <div key={table._id} className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-white/10 rounded-[0.625rem] bg-neutral-900 p-6 items-center" onClick={() => { setTableId(table._id); setTableOpen(true) }}>
-                                        <span className="text-sm text-neutral-400">{index + 1}.</span>
+                                    <div key={table._id} className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] bg-neutral-300 p-6 items-center" onClick={() => { setTableId(table._id); setTableOpen(true) }}>
+                                        <span className="text-sm text-neutral-900">{index + 1}.</span>
                                         {table.name}
                                     </div>
                                 ))
@@ -211,8 +211,8 @@ export default function AddTile({ onSaveSuccess }: AddTileProps) {
                                 rows.length === 0 ? (<div className="flex justify-center items-center h-full min-h-[200px]"><span className="text-neutral-500">No items found!</span></div>) : rows.map((item, index) => {
                                     const isItemSelected = selectedItems.some((sel) => sel._id === item._id);
                                     return (
-                                        <div key={item._id} className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-white/10 rounded-[0.625rem] ${isItemSelected ? "bg-linear-to-t from-sky-500 to-indigo-500 text-foreground" : "bg-neutral-900"} p-6 items-center`} onClick={() => isItemSelected ? setSelectedItems(selectedItems.filter((sel) => sel._id !== item._id)) : setSelectedItems([...selectedItems, { _id: item._id, tableId: item.tableId }])}>
-                                            <span className={`text-sm ${isItemSelected ? "text-foreground" : "text-neutral-400"}`}>{index + 1}.</span>
+                                        <div key={item._id} className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] ${isItemSelected ? "bg-linear-to-t from-sky-500 to-indigo-500 text-foreground" : "bg-neutral-300 border border-neutral-800"} p-6 items-center`} onClick={() => isItemSelected ? setSelectedItems(selectedItems.filter((sel) => sel._id !== item._id)) : setSelectedItems([...selectedItems, { _id: item._id, tableId: item.tableId }])}>
+                                            <span className={`text-sm ${isItemSelected ? "text-foreground" : "text-neutral-900"}`}>{index + 1}.</span>
                                             {item.name}
                                         </div>
                                     )

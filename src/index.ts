@@ -9,6 +9,8 @@ import userRouter from "./routes/userRoutes";
 import itemRouter from "./routes/itemRoutes";
 import inventoryTableRoutes from "./routes/inventoryRoutes";
 import tileItemRouter from "./routes/tileItemRoutes";
+import auditRouter from "./routes/auditRoutes";
+import searchRoutes from "./routes/searchRoutes";
 import mongoose from "mongoose";
 
 const app = express();
@@ -16,7 +18,8 @@ const app = express();
 const corsOptions = {
     origin: [
         'https://cosh-inventory.vercel.app',
-        'http://localhost:5173'
+        'http://localhost:5173',
+        'http://localhost:5174'
     ],
     credetials: true,
 }
@@ -50,6 +53,8 @@ app.use("/api/users", userRouter);
 app.use("/api/tables", inventoryTableRoutes);
 app.use("/api/items", itemRouter);
 app.use("/api/tileItems", tileItemRouter);
+app.use("/api/audits", auditRouter);
+app.use("/api/search", searchRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: "Hello from TypeScript Backend on Vercel" });

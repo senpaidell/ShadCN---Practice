@@ -2,13 +2,12 @@ import { Button } from "../ui/button"
 import AddIcon from '@mui/icons-material/Add';
 import { PieChartComponent } from "../charts/piechart";
 import { ToolTipCosh } from "../charts/tooltipchart";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { QuickMode } from "./quickmode";
 import { useEffect } from "react";
-import { useState } from "react";
-import { useParams } from "react-router-dom";
 import AddTile from "./buttons/add-tile";
 import { Skeleton } from "../ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
 import {
     Carousel,
     CarouselContent,
@@ -16,7 +15,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "../ui/carousel"
-
 
 let inStock = 4;
 let maxStock = 8;
@@ -36,15 +34,97 @@ interface InventoryTable {
 }
 
 export function HomePage() {
-    const [tables, setTables] = useState<InventoryTable[]>([]);
-    const [tableData, setTableData] = useState<any>(null);
-    const [tableItems, setTableItems] = useState<any[] | null>(null);
-    const [tileItems, setTileItems] = useState<any[] | null>(null);
-    const [users, setUsers] = useState<any>(null);
     const { id } = useParams();
     const navigate = useNavigate();
-
     const hours = new Date().getHours();
+
+    const { data: users } = useQuery({
+        queryKey: ["users"],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch("https://coshts-backend.vercel.app/api/users/getusers", {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to Fetch Users Table");
+            return res.json();
+        }
+    });
+
+    const { data: tables } = useQuery<InventoryTable[]>({
+        queryKey: ["tables"],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch tables");
+            return res.json();
+        }
+    });
+
+    useEffect(() => {
+        if (!id && tables && tables.length > 0) {
+            navigate(`/dashboard/${tables[0]._id}`);
+        }
+    }, [id, tables, navigate]);
+
+    const { data: tableData } = useQuery({
+        queryKey: ["tableDetails", id],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch table details");
+            return res.json();
+        },
+        enabled: !!id
+    });
+
+    const { data: tableItems } = useQuery({
+        queryKey: ["tableItems", id],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch items");
+            return res.json();
+        },
+        enabled: !!id
+    });
+
+    const { data: tileItems, refetch: fetchTileItems, isLoading: isLoadingTiles } = useQuery({
+        queryKey: ["tileItems"],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch("https://coshts-backend.vercel.app/api/tileItems", {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to get Tile Items");
+            return res.json();
+        }
+    });
 
     const tilesRemaining = Array.isArray(tileItems) ? tileItems.filter((item) => item.itemId !== null).map((item) => {
         const inStock = item.itemId.inStock || 0;
@@ -60,169 +140,6 @@ export function HomePage() {
         }
     }) : [];
 
-    console.log("Tiles Remaining", tilesRemaining)
-    console.log("Users Table", users)
-
-    if (id) {
-        console.log("id is working", id)
-    }
-    //Fetch Users
-    useEffect(() => {
-        const fetchUsers = async () => {
-            const token = localStorage.getItem("token");
-            try {
-                const res = await fetch("https://coshts-backend.vercel.app/api/users/getusers", {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) {
-                    throw new Error("Failed to Fetch Users Table")
-                }
-                const data = await res.json();
-                setUsers(data);
-                console.log("Here are the users data", data)
-            } catch (error) {
-                console.error("Error loading Users table", error)
-            }
-        }
-        fetchUsers()
-    }, [])
-
-    //Fetch Tables
-    useEffect(() => {
-        const fetchTables = async () => {
-            const token = localStorage.getItem("token")
-            console.log("Homepage FetchTables")
-            try {
-                const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) {
-                    throw new Error("Failed to fetch");
-                }
-
-                const data = await res.json()
-                console.log(data)
-                setTables(data)
-
-                if (!id && data.length > 0) {
-                    console.log("No id found, redirecting to the first table");
-                    navigate(`/dashboard/${data[0]._id}`)
-                }
-            } catch (error) {
-                console.error("Error loading tables on Homepage", error)
-            }
-        }
-        fetchTables()
-        console.log("fetch tables is working")
-    }, [id, navigate])
-
-    //Fetch Table Details
-    useEffect(() => {
-        const token = localStorage.getItem("token")
-        const fetchTableDetails = async () => {
-            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
-                method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
-            })
-            const data = await res.json()
-            console.log(data)
-            setTableData(data)
-        }
-
-        if (id) {
-            fetchTableDetails()
-            console.log("fetchTableDetails ID", id)
-        } else {
-            console.log("fetchTableDeailts id is still not working")
-        }
-    }, [id])
-
-    useEffect(() => {
-        if (tableItems !== null) {
-            console.log(tableItems)
-        } else {
-            console.log("still broken")
-        }
-    }, [tableItems])
-
-    //Fetch Items Inside Tables
-    useEffect(() => {
-        const token = localStorage.getItem("token")
-        const fetchTableItems = async () => {
-            try {
-                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Failed to fetch items")
-
-                const data = await res.json();
-                setTableItems(data);
-                console.log("This is homepage data", data)
-            } catch (error) {
-                console.error("Error loading items on dashboard", error)
-            }
-        }
-        if (id) {
-            fetchTableItems()
-        }
-    }, [id])
-
-
-    // useEffect(() => {
-    //     const fetchTileItems = async () => {
-    //         try {
-    //             const res = await fetch("http://localhost:5000/api/tileItems");
-    //             const data = await res.json();
-    //             setTileItems(data);
-    //             data.map((item: any) => {
-    //                 const { itemId } = item
-    //                 const { values } = itemId
-    //                 console.log("Fetch tile items values", values)
-    //             })
-    //         } catch (error) {
-    //             console.error("Failed to get Tile Items", error)
-    //         }
-    //     }
-    //     fetchTileItems()
-    // }, [])
-
-    //Fetch Tile Items Saved in the DB
-    const fetchTileItems = async () => {
-        const token = localStorage.getItem("token");
-        try {
-            const res = await fetch("https://coshts-backend.vercel.app/api/tileItems", {
-                method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-            const data = await res.json();
-            setTileItems(data);
-        } catch (error) {
-            console.error("Failed to get Tile Items", error)
-        }
-    }
-
-    useEffect(() => {
-        fetchTileItems()
-    }, [])
-
     return (
         <>
             <div className="w-full sm:p-10 p-2 flex flex-col gap-y-4 overflow-hidden">
@@ -234,7 +151,7 @@ export function HomePage() {
 
                 <div className="flex flex-row items-center">
                     <h5 className="text-neutral-400">Remaining Items Left</h5>
-                    <Link to="/quickmode" className="ml-auto"><Button className="cursor-pointer">Quick Mode</Button></Link>
+                    <Link to={`/quickmode/${id}`} className="ml-auto"><Button className="cursor-pointer">Quick Mode</Button></Link>
                 </div>
 
                 <div className="itemsRemaining flex flex-col xl:flex-row gap-4 w-full">
@@ -251,8 +168,8 @@ export function HomePage() {
                             >
                                 <CarouselContent className="-ml-4">
 
-                                    {/* LOADING STATE */}
-                                    {tileItems === null ? (
+                                    {/* LOADING STATE - Uses TanStack Query's isLoading status now */}
+                                    {isLoadingTiles ? (
                                         Array.from({ length: 4 }).map((_, index) => (
                                             <CarouselItem key={index} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
                                                 <Skeleton className="h-64 w-full rounded-[0.625rem] bg-neutral-800" />
@@ -273,7 +190,7 @@ export function HomePage() {
                                                             {items.percentage}%
                                                         </span>
                                                         <span className={`p-4 absolute bottom-0 right-0 text-3xl font-bold text-neutral-200`}>
-                                                            {items.percentage >= 50 ? "👍" : "🛑"}
+                                                            {items.percentage >= 50 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-green-600 text-green-600">Good</span>) : (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-red-600 text-red-600">Restock Now!</span>)}
                                                         </span>
                                                     </div>
                                                 </CarouselItem>
@@ -287,6 +204,7 @@ export function HomePage() {
                         </div>
 
                         <div className="flex-shrink-0 w-full xl:w-[280px]">
+                            {/* Passed the query refetch directly */}
                             <AddTile onSaveSuccess={fetchTileItems} />
                         </div>
 

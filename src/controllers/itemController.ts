@@ -66,12 +66,12 @@ export const getItemsByTable = async (req: AuthRequest, res: Response) => {
         // }
         // const items = await Item.find({tableId})
         const { id } = req.params;
-        const items = await Item.find({ tableId: id as string, user: req.user.id});
+        const items = await Item.find({ tableId: id as string, user: req.user.id });
         res.status(200).json(items)
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
-}       
+}
 
 //DASHBOARD TILES GET ITEM
 export const getDashboardItems = async (req: AuthRequest, res: Response) => {
@@ -125,8 +125,8 @@ export const updateItem = async (req: AuthRequest, res: Response) => {
         );
 
         if (!updatedItem) {
-             res.status(404).json({ message: "Item not found" });
-             return;
+            res.status(404).json({ message: "Item not found" });
+            return;
         }
 
         res.status(200).json(updatedItem);
@@ -151,3 +151,77 @@ export const deleteItem = async (req: AuthRequest, res: Response) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+// GET REPORT DATA
+export const getReportData = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { type } = req.query; // 'summary', 'expiration', 'restocking'
+
+        let query: any = { tableId: id as string, user: req.user.id };
+        let sort: any = {};
+
+        // Apply sorting and filtering based on the report type
+        if (type === 'expiration') {
+            // Only get items that have an expiration date, sort closest to expiring first
+            query.expiration = { $exists: true, $ne: null };
+            sort.expiration = 1;
+        } else if (type === 'restocking') {
+            // Sort by lowest balance first so they appear at the top of the report
+            sort.balance = 1;
+        } else {
+            // Default summary sorting (newest first or alphabetical)
+            sort.createdAt = -1;
+        }
+
+        const items = await Item.find(query).sort(sort);
+        res.status(200).json(items);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const updateItemStock = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { action, quantity } = req.body;
+
+        // Find the item in the database
+        const item = await Item.findById(id); // Ensure you have your Item model imported
+
+        if (!item) {
+            return res.status(404).json({ message: "Item not found" });
+        }
+
+        // Parse quantity to ensure it's a clean number
+        const qty = parseInt(quantity) || 1;
+
+        if (action === "in") {
+            // Increase 'In Stock' and 'New Stock'
+            item.inStock = (item.inStock || 0) + qty;
+            item.newStock = (item.newStock || 0) + qty;
+
+        } else if (action === "out") {
+            // Check if they are trying to stock out more than they have (Optional but recommended)
+            if ((item.inStock || 0) < qty) {
+                return res.status(400).json({ message: "Not enough stock to deduct this amount." });
+            }
+
+            // Decrease 'In Stock'
+            item.inStock = (item.inStock || 0) - qty;
+
+        } else {
+            return res.status(400).json({ message: "Invalid action type. Must be 'in' or 'out'." });
+        }
+
+        // Save the updated item
+        const updatedItem = await item.save();
+
+        res.status(200).json(updatedItem);
+
+    } catch (error) {
+        console.error("Error updating stock:", error);
+        res.status(500).json({ message: "Server error while updating stock" });
+    }
+};
+

@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "../../ui/button"
 import { useForm } from "react-hook-form"
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
@@ -35,14 +35,14 @@ interface Attribute {
   dataType: string;
 }
 
-export function CreateTable({onSave}: CreateTableProps) {
+export function CreateTable({ onSave }: CreateTableProps) {
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState(true);
 
   const form = useForm({
     defaultValues: {
-      tableName: "", 
-      attributes: [] as Attribute [],
+      tableName: "",
+      attributes: [] as Attribute[],
     }
   })
 
@@ -52,7 +52,7 @@ export function CreateTable({onSave}: CreateTableProps) {
         tableName: "",
         attributes: [],
       });
-      setChoice(true); 
+      setChoice(true);
     }
   }, [open, form]);
 
@@ -83,72 +83,70 @@ export function CreateTable({onSave}: CreateTableProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-          <Button className="cursor-pointer">Create Table</Button>
+        <Button className="cursor-pointer">Create Table</Button>
       </DialogTrigger>
-      
+
       <DialogContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-                <DialogTitle>Generate Table</DialogTitle>
-                <DialogDescription>
-                  Select the attributes you want to include.
-                </DialogDescription>
+              <DialogTitle>Generate Table</DialogTitle>
+              <DialogDescription>
+                Select the attributes you want to include.
+              </DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-2">
               <Label>Table Name</Label>
-              <Input {...form.register("tableName")} placeholder="Enter Table Name"/>
+              <Input {...form.register("tableName")} placeholder="Enter Table Name" className="" />
             </div>
 
-            
+
             {choice ? (
               <div className="flex flex-row justify-center gap-x-4 h-78 w-full">
-                <div 
+                <div
                   onClick={handleSelectAll}
-                  className={`w-1/2 cursor-pointer transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border p-4 text-center ${
-                    isAllSelected 
-                      ? "bg-neutral-800 border-white/50 ring-1 ring-white/50" 
-                      : "bg-neutral-900 border-white/10 hover:brightness-125"
-                  }`}
+                  className={`w-1/2 cursor-pointer transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border p-4 text-center ${isAllSelected
+                    ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white border-black border"
+                    : "bg-neutral-300 border-black border hover:brightness-125"
+                    }`}
                 >
-                  <div><CircleCheck size={32} /></div>
+                  <div><CircleCheck size={32} className="" /></div>
                   <div>All in One!</div>
-                  <div className="text-neutral-400 text-xs">All attributes are already provided</div>
+                  <div className="text-xs">All attributes are already provided</div>
                 </div>
 
-                <div 
-                  onClick={() => setChoice(false)} 
-                  className="w-1/2 cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-white/10 p-4 text-center bg-neutral-900"
+                <div
+                  onClick={() => setChoice(false)}
+                  className="w-1/2 cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-black p-4 text-center bg-neutral-300"
                 >
                   <div><Settings2 size={32} /></div>
                   <div>Custom</div>
-                  <div className="text-neutral-400 text-xs">Choose what you want to see in the table</div>
+                  <div className="text-xs">Choose what you want to see in the table</div>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row gap-4 w-full h-auto sm:h-78">
-                
-                <div className="w-full sm:w-2/3 flex flex-col gap-y-2 border border-white/10 rounded-[0.625rem] p-4 bg-neutral-900 overflow-y-auto max-h-[300px] sm:max-h-full">
+
+                <div className="w-full sm:w-2/3 flex flex-col gap-y-2 border border-black rounded-[0.625rem] p-4 bg-neutral-200 overflow-y-auto max-h-[300px] sm:max-h-full">
                   {tableOptions.map((item, index) => {
                     const isSelected = currentSelected.some(attr => attr.name === item.name);
-                    
+
                     return (
-                      <div 
-                        key={item.id} 
-                        className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-white/10 rounded-[0.625rem] p-4 items-center shrink-0 ${
-                          isSelected ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white" : "bg-neutral-900"
-                        }`}
+                      <div
+                        key={item.id}
+                        className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-black rounded-[0.625rem] p-4 items-center shrink-0 ${isSelected ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white" : "bg-neutral-400"
+                          }`}
                         onClick={() => {
                           const current = form.getValues("attributes");
                           if (!isSelected) {
-                            form.setValue("attributes", [...current, {name: item.name, dataType: item.type}], { shouldValidate: true });
+                            form.setValue("attributes", [...current, { name: item.name, dataType: item.type }], { shouldValidate: true });
                           } else {
                             form.setValue("attributes", current.filter(attr => attr.name !== item.name), { shouldValidate: true });
                           }
                         }}
                       >
-                        <span className={`text-sm ${isSelected ? "text-white" : "text-neutral-400"}`}>
+                        <span className={`text-sm ${isSelected ? "text-white" : "text-black"}`}>
                           {index + 1}.
                         </span>
                         <span>{item.name}</span>
@@ -157,27 +155,27 @@ export function CreateTable({onSave}: CreateTableProps) {
                   })}
                 </div>
 
-                <div className="w-full sm:w-1/3 flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-white/10 p-4 text-center bg-neutral-900">
+                <div className="w-full sm:w-1/3 flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-black p-4 text-center bg-neutral-300">
                   <div><Settings2 size={32} /></div>
                   <div>Custom</div>
-                  <div className="text-neutral-400 text-xs">Choose what you want to see in the table</div>
+                  <div className="text-xs">Choose what you want to see in the table</div>
                 </div>
 
               </div>
             )}
-          
+
             <DialogFooter className="flex sm:justify-between w-full mt-4">
               {!choice && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  className="mr-auto cursor-pointer" 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mr-auto cursor-pointer"
                   onClick={() => setChoice(true)}
                 >
                   Go Back
                 </Button>
               )}
-              
+
               <div className="flex gap-2 ml-auto">
                 <DialogClose asChild>
                   <Button type="button" variant="outline" className="cursor-pointer" onClick={() => setOpen(false)}>Cancel</Button>
