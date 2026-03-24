@@ -3,7 +3,7 @@ import { Button } from "../ui/button"
 import { AddItem } from "./inventory-buttons/add-item"
 import { FilterItem } from "./inventory-buttons/filter-item"
 import { TableSelector } from "./inventory-buttons/table-selector"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { DataTable } from "./data-table/data-table"
 import { createColumns, getDbKey } from "./data-table/columns"
 import { DataTableSkeleton } from "./data-table/data-table-skeleton"
@@ -19,6 +19,7 @@ import {
     DialogDescription
 } from "../ui/dialog";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 interface InventoryTable {
     _id: String,
@@ -30,11 +31,9 @@ interface InventoryTable {
 }
 
 export default function EachTable() {
-    const [tables, setTables] = useState<InventoryTable[]>([])
     const { id } = useParams();
-    const [tableData, setTableData] = useState<any>(null);
-    const [rows, setRows] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const token = localStorage.getItem("token");
 
     // Status State
     const [saveStatus, setSaveStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -45,92 +44,68 @@ export default function EachTable() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [editFormData, setEditFormData] = useState<any>({});
-    const [isEditing, setIsEditing] = useState(false);
 
     // Delete State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingItem, setDeletingItem] = useState<any>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+
+    // --- QUERIES ---
 
     // Fetch Single Table Data
-    useEffect(() => {
-        const token = localStorage.getItem("token")
-        const fetchTableDetails = async () => {
+    const { data: tableData, isLoading: isTableLoading } = useQuery({
+        queryKey: ['table', id],
+        queryFn: async () => {
             const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
                 method: 'GET',
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 }
-            })
-            const data = await res.json()
-            setTableData(data)
-        }
+            });
+            if (!res.ok) throw new Error("Failed to fetch table details");
+            return res.json();
+        },
+        enabled: !!id
+    });
 
-        if (id) {
-            fetchTableDetails()
-        }
-    }, [id])
-
-    // Fetch All Tables (For context/selector if needed)
-    useEffect(() => {
-        const fetchTables = async () => {
-            const token = localStorage.getItem("token")
-            try {
-                const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Failed to fetch");
-                const data = await res.json();
-                setTables(data);
-            } catch (error) {
-                console.error("Error loading tables:", error)
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchTables()
-    }, [])
+    // Fetch All Tables
+    // const { data: tables = [], isLoading: isTablesLoading } = useQuery({
+    //     queryKey: ['tables'],
+    //     queryFn: async () => {
+    //         const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
+    //             method: 'GET',
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 "Authorization": `Bearer ${token}`
+    //             }
+    //         });
+    //         if (!res.ok) throw new Error("Failed to fetch tables");
+    //         return res.json();
+    //     }
+    // });
 
     // Fetch Items for this Table
-    useEffect(() => {
-        const fetchTableItems = async () => {
-            const token = localStorage.getItem("token")
-            try {
-                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Failed to fetch items")
+    const { data: rows = [], isLoading: isItemsLoading } = useQuery({
+        queryKey: ['items', id],
+        queryFn: async () => {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch items");
+            return res.json();
+        },
+        enabled: !!id
+    });
 
-                const data = await res.json()
-                setRows(data);
-            } catch (error) {
-                console.error("Error loading items:", error)
-            }
-        }
+    // --- MUTATIONS ---
 
-        if (id) {
-            fetchTableItems()
-        }
-    }, [id])
-
-    // --- CREATE HANDLER ---
-    const handleSaveItem = async (itemData: any) => {
-        const token = localStorage.getItem("token")
-
-        setIsStatusModelOpen(true);
-        setSaveStatus('loading');
-        setStatusMessage("Saving your new item...");
-
-        try {
+    // Create Item Mutation
+    const createItemMutation = useMutation({
+        mutationFn: async (itemData: any) => {
             const res = await fetch('https://coshts-backend.vercel.app/api/items', {
                 method: 'POST',
                 headers: {
@@ -138,24 +113,92 @@ export default function EachTable() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(itemData),
-            })
-
+            });
             if (!res.ok) throw new Error("Failed to save item");
-
-            const newItem = await res.json();
-            setRows((prev) => [...prev, newItem]);
+            return res.json();
+        },
+        onMutate: () => {
+            setIsStatusModelOpen(true);
+            setSaveStatus('loading');
+            setStatusMessage("Saving your new item...");
+        },
+        onSuccess: (newItem) => {
+            queryClient.setQueryData(['items', id], (oldData: any) => [...(oldData || []), newItem]);
             setSaveStatus('success');
             setStatusMessage('Item has been added successfully.');
-            return true;
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error("Error saving item:", error);
             setSaveStatus('error');
-            setStatusMessage("We couldn't save your item. Please check your connection.")
+            setStatusMessage("We couldn't save your item. Please check your connection.");
+        }
+    });
+
+    const handleSaveItem = async (itemData: any) => {
+        try {
+            await createItemMutation.mutateAsync(itemData);
+            return true;
+        } catch {
             return false;
         }
     }
 
-    // --- EDIT HANDLERS ---
+    // Edit Item Mutation
+    const editItemMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${editingItem._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(editFormData)
+            });
+            if (!res.ok) throw new Error("Failed to update item");
+            return res.json();
+        },
+        onSuccess: (updatedItem) => {
+            queryClient.setQueryData(['items', id], (oldData: any) =>
+                oldData.map((r: any) => r._id === updatedItem._id ? updatedItem : r)
+            );
+            toast.success("Item updated successfully.");
+            setIsEditModalOpen(false);
+        },
+        onError: () => {
+            toast.error("Failed to update item.");
+        }
+    });
+
+    const handleEditItem = () => {
+        if (!editingItem) return;
+        editItemMutation.mutate();
+    };
+
+    // Delete Item Mutation
+    const deleteItemMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${deletingItem._id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to delete item");
+            return deletingItem._id;
+        },
+        onSuccess: (deletedId) => {
+            queryClient.setQueryData(['items', id], (oldData: any) =>
+                oldData.filter((r: any) => r._id !== deletedId)
+            );
+            toast.success("Item deleted successfully.");
+            setIsDeleteModalOpen(false);
+        },
+        onError: () => {
+            toast.error("Failed to delete the item.");
+        }
+    });
+
+    const handleDeleteItem = () => {
+        if (!deletingItem) return;
+        deleteItemMutation.mutate();
+    };
+
+    // --- EVENT HANDLERS FOR MODALS ---
     const openEditModal = (item: any) => {
         setEditingItem(item);
 
@@ -171,62 +214,17 @@ export default function EachTable() {
         setIsEditModalOpen(true);
     };
 
-    const handleEditItem = async () => {
-        if (!editingItem) return;
-        setIsEditing(true);
-        const token = localStorage.getItem("token");
-
-        try {
-            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${editingItem._id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(editFormData)
-            });
-
-            if (!res.ok) throw new Error("Failed to update item");
-            const updatedItem = await res.json();
-
-            setRows((prev) => prev.map(r => r._id === updatedItem._id ? updatedItem : r));
-            toast.success("Item updated successfully.");
-            setIsEditModalOpen(false);
-        } catch (error) {
-            toast.error("Failed to update item.");
-        } finally {
-            setIsEditing(false);
-        }
-    };
-
-    // --- DELETE HANDLERS ---
     const openDeleteModal = (item: any) => {
         setDeletingItem(item);
         setIsDeleteModalOpen(true);
     };
 
-    const handleDeleteItem = async () => {
-        if (!deletingItem) return;
-        setIsDeleting(true);
-        const token = localStorage.getItem("token");
-
-        try {
-            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${deletingItem._id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!res.ok) throw new Error("Failed to delete item");
-
-            setRows((prev) => prev.filter(r => r._id !== deletingItem._id));
-            toast.success("Item deleted successfully.");
-            setIsDeleteModalOpen(false);
-        } catch (error) {
-            toast.error("Failed to delete the item.");
-        } finally {
-            setIsDeleting(false);
-        }
-    };
+    // Simplify loading states based on mutation status
+    const isEditing = editItemMutation.isPending;
+    const isDeleting = deleteItemMutation.isPending;
 
     // --- LOADING SCREENS & EARLY RETURNS ---
-    if (!tableData || !tableData.attributes || !Array.isArray(tableData.attributes)) {
+    if (isTableLoading || !tableData || !tableData.attributes || !Array.isArray(tableData.attributes)) {
         return (
             <div className="w-screen sm:p-10 p-2 space-y-4">
                 <div className="flex justify-between">
@@ -238,15 +236,13 @@ export default function EachTable() {
         )
     }
 
-    if (!rows) {
+    if (isItemsLoading || !rows) {
         return <DataTableSkeleton />
     }
 
     // --- RENDER TABLE ---
     const columnNames = tableData?.attributes.map((attr: any) => attr.name) || [];
     const columns = createColumns(columnNames, openEditModal, openDeleteModal);
-    console.log(columnNames);
-    console.log(columns)
 
     return (
         <>

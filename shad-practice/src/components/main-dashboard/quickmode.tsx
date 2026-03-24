@@ -1,85 +1,28 @@
 import { Button } from "../ui/button"
-import AddIcon from '@mui/icons-material/Add';
-import { PieChartComponent } from "../charts/piechart";
-import { ToolTipCosh } from "../charts/tooltipchart";
 import { Link } from "react-router-dom";
-import { Image } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams } from "react-router-dom";
+import { Image, Minus, Plus } from "lucide-react";
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "../ui/skeleton";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "../ui/carousel";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
-const itemsOptions = [
-    {
-        id: 1,
-        name: "Vince",
-        icon: <Image size={32} />
-    },
-    {
-        id: 2,
-        name: "Randell",
-        icon: <Image size={32} />
-    },
-    {
-        id: 3,
-        name: "Perez",
-        icon: <Image size={32} />
-    },
-    {
-        id: 4,
-        name: "Robosa",
-        icon: <Image size={32} />
-    },
-    {
-        id: 5,
-        name: "Vince",
-        icon: <Image size={32} />
-    },
-    {
-        id: 6,
-        name: "Randell",
-        icon: <Image size={32} />
-    },
-    {
-        id: 7,
-        name: "Perez",
-        icon: <Image size={32} />
-    },
-    {
-        id: 8,
-        name: "Robosa",
-        icon: <Image size={32} />
-    },
-    {
-        id: 9,
-        name: "Vince",
-        icon: <Image size={32} />
-    },
-    {
-        id: 10,
-        name: "Randell",
-        icon: <Image size={32} />
-    },
-    {
-        id: 11,
-        name: "Perez",
-        icon: <Image size={32} />
-    },
-    {
-        id: 12,
-        name: "Robosa",
-        icon: <Image size={32} />
-    },
-    {
-        id: 13,
-        name: "Vince",
-        icon: <Image size={32} />
-    },
-    {
-        id: 14,
-        name: "Randell",
-        icon: <Image size={32} />
-    },
-]
+// Import your audit hook (Adjust the path if necessary)
+import { useLogAudit } from "@/hooks/useLogAudit";
 
 interface InventoryTable {
     _id: string,
@@ -90,129 +33,331 @@ interface InventoryTable {
     url: string
 }
 
+// --- 1. TABLE GROUP COMPONENT ---
+function TableGroup({ table }: { table: InventoryTable }) {
+    const queryClient = useQueryClient();
+    const logAudit = useLogAudit();
+
+    // Modal State
+    const [selectedItem, setSelectedItem] = useState<any | null>(null);
+    const [actionType, setActionType] = useState<"in" | "out">("in");
+    const [quantity, setQuantity] = useState<number | string>(1);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const { data: localItems = [], isLoading } = useQuery({
+        queryKey: ['items', table._id],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${table._id}`, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Error fetching items for table");
+            return res.json();
+        },
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // Handle opening the modal and resetting state
+    const openModal = (item: any) => {
+        setSelectedItem(item);
+        setActionType("in"); // Default to Stock In
+        setQuantity(1);
+    };
+
+    const handleClose = () => {
+        setSelectedItem(null);
+        setIsUpdating(false);
+    };
+
+    // Handle the actual database update
+    const handleConfirm = async () => {
+        if (!selectedItem) return;
+        setIsUpdating(true);
+
+        try {
+            const token = localStorage.getItem("token");
+
+            // NOTE: You may need to adjust the URL and payload to match your exact backend controller logic
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${selectedItem._id}/stock`, {
+                method: 'PATCH',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: actionType, // "in" or "out"
+                    quantity: Number(quantity)
+                })
+            });
+
+            if (!res.ok) throw new Error("Failed to update stock");
+
+            // 1. Invalidate queries to refresh the UI if necessary
+            queryClient.invalidateQueries({ queryKey: ['items', table._id] });
+
+            // 2. Log the activity using your hook
+            logAudit.mutate({
+                targetName: selectedItem.name,
+                tableName: table.name,
+                activity: actionType === "in" ? "Item Added" : "Item Subtracted"
+            });
+
+            // 3. Close the modal
+            handleClose();
+
+        } catch (error) {
+            console.error("Error updating stock:", error);
+            // Handle error state/toast notification here if needed
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    return (
+        <div className="border border-neutral-800 p-4 rounded-[0.625rem] w-full overflow-hidden">
+            <span className="text-lg font-bold">{table.name}</span>
+
+            <div className="mt-4 relative px-10 sm:px-14 w-full">
+                <Carousel
+                    opts={{ align: "start", dragFree: true }}
+                    className="w-full cursor-grab active:cursor-grabbing"
+                >
+                    <CarouselContent className="-ml-2">
+                        {isLoading ? (
+                            Array.from({ length: 8 }).map((_, index) => (
+                                <CarouselItem key={index} className="pl-2 basis-auto">
+                                    <Skeleton
+                                        className="h-[12vh] w-[12vh] shrink-0 border-1 border-neutral-800 rounded-[0.625rem] bg-neutral-900"
+                                    />
+                                </CarouselItem>
+                            ))
+                        ) : localItems.length === 0 ? (
+                            <div className="text-neutral-500 text-sm ml-4">No items found.</div>
+                        ) : (
+                            localItems.map((item: any) => (
+                                <CarouselItem key={item._id} className="pl-2 basis-auto">
+                                    <button
+                                        onClick={() => openModal(item)}
+                                        className="flex flex-col hover:brightness-125 transition-all cursor-pointer h-[12vh] w-[12vh] shrink-0 border-1 flex justify-center items-center border-neutral-800 rounded-[0.625rem] bg-neutral-300 text-black"
+                                    >
+                                        <div><Image size={32} /></div>
+                                        <div className="mt-2 text-sm font-semibold text-center px-1 truncate w-full">
+                                            {item.name}
+                                        </div>
+                                    </button>
+                                </CarouselItem>
+                            ))
+                        )}
+                    </CarouselContent>
+
+                    {!isLoading && localItems.length > 0 && (
+                        <>
+                            <CarouselPrevious className="absolute -left-10 sm:-left-14 z-10 bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white" />
+                            <CarouselNext className="absolute -right-10 sm:-right-14 z-10 bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white" />
+                        </>
+                    )}
+                </Carousel>
+            </div>
+
+            {/* LIGHT MODE MODAL */}
+            <Dialog open={!!selectedItem} onOpenChange={(open) => !open && handleClose()}>
+                <DialogContent className="bg-white text-black border-neutral-200 sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-center">
+                            {selectedItem?.name}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-6 py-4">
+                        {/* Action Toggle */}
+                        <div className="flex w-full rounded-md border border-neutral-300 p-1 bg-neutral-100">
+                            <button
+                                onClick={() => setActionType("in")}
+                                className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "in"
+                                    ? "bg-white text-black shadow-sm"
+                                    : "text-neutral-500 hover:text-black"
+                                    }`}
+                            >
+                                Stock In
+                            </button>
+                            <button
+                                onClick={() => setActionType("out")}
+                                className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "out"
+                                    ? "bg-white text-black shadow-sm"
+                                    : "text-neutral-500 hover:text-black"
+                                    }`}
+                            >
+                                Stock Out
+                            </button>
+                        </div>
+
+                        {/* Quantity Controller */}
+                        {/* Quantity Controller */}
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-sm font-semibold text-neutral-600">Quantity</span>
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    type="button" // Prevents the button from acting weird in the modal
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-10 w-10 border-neutral-300 text-black hover:bg-neutral-100 cursor-pointer"
+                                    onClick={() => setQuantity(prev => Math.max(1, Number(prev) - 1))}
+                                >
+                                    <Minus className="h-4 w-4" />
+                                </Button>
+
+                                <Input
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        // Allow empty string for easy deleting, otherwise parse as number
+                                        setQuantity(val === "" ? "" : parseInt(val, 10));
+                                    }}
+                                    onBlur={() => {
+                                        // If the user clicks away while the input is empty or invalid, reset to 1
+                                        if (quantity === "" || Number(quantity) < 1 || isNaN(Number(quantity))) {
+                                            setQuantity(1);
+                                        }
+                                    }}
+                                    className="h-10 w-20 text-center text-lg font-bold border-neutral-300 text-black focus-visible:ring-neutral-400"
+                                    min={1}
+                                />
+
+                                <Button
+                                    type="button" // Prevents the button from acting weird in the modal
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-10 w-10 border-neutral-300 text-black hover:bg-neutral-100 cursor-pointer"
+                                    onClick={() => setQuantity(prev => Number(prev) + 1)}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            className="w-full bg-black text-white hover:bg-neutral-800"
+                            onClick={handleConfirm}
+                            disabled={isUpdating}
+                        >
+                            {isUpdating ? "Confirming..." : "Confirm Update"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
+
+// --- 2. MAIN QUICKMODE COMPONENT ---
 export function QuickMode() {
     const [pageTitle, setPageTitle] = useState("Mode");
-    const [tables, setTables] = useState<InventoryTable[]>([]);
-    const [isLoading, setIsLoading] = useState(true)
-    const [rows, setRows] = useState<any[]>([])
-    const { id } = useParams()
-    const [tableID, setTableID] = useState<string | undefined>();
-    const [items, setItems] = useState<any[] | null>(null);
-    useEffect(() => {
-        const fetchTables = async () => {
-            const token = localStorage.getItem("token")
-            try {
-                const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Failed to fetch Quick Mode")
+    const [currentPage, setCurrentPage] = useState(1);
+    const tablesPerPage = 3;
 
-                const data = await res.json()
-                setTables(data)
-            } catch (error) {
-                console.log("Error loading fetchTables on Add-Tile", error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        fetchTables();
-    }, [id])
-
-    useEffect(() => {
-        const fetchTableDetails = async () => {
+    const { data: tables = [], isLoading } = useQuery<InventoryTable[]>({
+        queryKey: ['tables'],
+        queryFn: async () => {
             const token = localStorage.getItem("token");
-            if (!tableID) return;
-            try {
-                const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Error fetching table items");
-                const data = await res.json();
-                setRows(data)
-            } catch (error) {
-                console.log("Error fetching table items", error)
-            }
-        }
-        fetchTableDetails()
-    }, [id])
+            const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch tables");
+            return res.json();
+        },
+        staleTime: 1000 * 60 * 5,
+    });
 
-    useEffect(() => {
-        console.log("Use effect is working?")
-        const token = localStorage.getItem("token");
-        const fetchTableItems = async () => {
-            try {
-                const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
-                if (!res.ok) throw new Error("Error fetching actual items")
-                const data = await res.json();
-                setItems(data);
-                console.log("Here is the data: ")
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        if (id) {
-            fetchTableItems()
-        } else {
-            console.log("id is not being called")
-        }
-    }, [id])
+    const indexOfLastTable = currentPage * tablesPerPage;
+    const indexOfFirstTable = indexOfLastTable - tablesPerPage;
+    const currentTables = tables.slice(indexOfFirstTable, indexOfLastTable);
+    const totalPages = Math.ceil(tables.length / tablesPerPage);
 
-    console.log("Quick Mode")
-    console.log(items)
     return (
-        <>
-            <div className="w-screen sm:p-10 p-2 flex flex-col gap-y-4">
-                <div className="text-3xl font-bold">
-                    Quick Stock {pageTitle}
-                </div>
-
-                <div className="flex flex-row items-center">
-                    <h5 className="text-neutral-400">Click the item you made today for automatic deduction</h5>
-                    <Link to="/dashboard" className="ml-auto"><Button variant="outline" className="cursor-pointer" onClick={() => console.log("Button Pressed")}>Go Back to Home</Button></Link>
-                </div>
-
-                <div className="flex w-full">
-                    <Tabs defaultValue="Stock Out" className="sm:ml-auto sm:w-96 w-full">
-                        <TabsList className="w-full">
-                            <TabsTrigger value="Stock In" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("In")}>
-                                Stock In
-                            </TabsTrigger>
-                            <TabsTrigger value="Stock Out" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("Out")}>
-                                Stock Out
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-
-                <div className="h-[64vh]">
-                    <div className="grid grid-cols-3 xl:grid-cols-6 h-full justify-between gap-2">
-                        {items?.map((item) => (
-                            <button key={item.id} onClick={() => console.log("Item Clicked " + item.name + " " + item.id)} className="flex flex-col hover:brightness-125 cursor-pointer w-fill h-fill border-1 flex justify-center items-center border-white/10 rounded-[0.625rem] bg-neutral-900">
-                                <div><Image size={32} /></div>
-                                <div>{item.name}</div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex">
-                    <Button className="ml-auto cursor-pointer">Remove Tile</Button>
-                </div>
+        <div className="w-screen sm:p-10 p-2 flex flex-col gap-y-4 overflow-x-hidden">
+            <div className="text-3xl font-bold">
+                Quick Stock {pageTitle}
             </div>
-        </>
-    )
+
+            <div className="flex flex-row items-center">
+                <h5 className="text-neutral-400">Click the item you made today for automatic deduction</h5>
+                <Link to="/dashboard" className="ml-auto">
+                    <Button variant="outline" className="cursor-pointer">Go Back to Home</Button>
+                </Link>
+            </div>
+
+            <div className="flex w-full">
+                <Tabs defaultValue="Stock Out" className="sm:ml-auto sm:w-96 w-full">
+                    <TabsList className="w-full">
+                        <TabsTrigger value="Stock In" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("In")}>
+                            Stock In
+                        </TabsTrigger>
+                        <TabsTrigger value="Stock Out" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("Out")}>
+                            Stock Out
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
+
+            <div className="min-h-[64vh] flex flex-col justify-between">
+                <div className="flex flex-col gap-y-4 w-full">
+                    {isLoading ? (
+                        Array.from({ length: tablesPerPage }).map((_, index) => (
+                            <div key={index} className="border border-neutral-800 p-4 rounded-[0.625rem] w-full">
+                                <Skeleton className="h-7 w-48 bg-neutral-800 rounded-md" />
+                                <div className="mt-4 px-10 sm:px-14 flex gap-2 overflow-hidden w-full">
+                                    {Array.from({ length: 8 }).map((_, idx) => (
+                                        <Skeleton
+                                            key={idx}
+                                            className="h-[12vh] w-[12vh] shrink-0 border-1 border-neutral-800 rounded-[0.625rem] bg-neutral-900"
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        currentTables.map((table) => (
+                            <TableGroup key={table._id} table={table} />
+                        ))
+                    )}
+                </div>
+
+                {tables.length > 0 && !isLoading && (
+                    <div className="flex justify-center items-center gap-x-4 mt-8 py-4">
+                        <Button
+                            variant="outline"
+                            className="cursor-pointer"
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => prev - 1)}
+                        >
+                            Previous
+                        </Button>
+                        <span className="text-sm font-semibold">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            className="cursor-pointer"
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }

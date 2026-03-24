@@ -1,9 +1,19 @@
 import { Button } from "../ui/button";
-import { Sheet, Edit2, Trash2 } from "lucide-react"; // Imported new icons
+import {
+    Sheet,
+    Edit2,
+    Trash2,
+    Loader2,
+    CheckCircle2,
+    AlertCircle,
+    ChevronLeft,
+    ChevronRight
+} from "lucide-react";
 import { CreateTable } from "./inventory-buttons/create-table";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Toaster, toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Dialog,
     DialogContent,
@@ -13,7 +23,6 @@ import {
     DialogDescription
 } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface InventoryTable {
     _id: string;
@@ -26,14 +35,13 @@ interface InventoryTable {
 
 function Skeleton({ className }: { className?: string }) {
     return (
-        <div className={`animate-pulse rounded-md bg-neutral-800/50 ${className}`} />
+        <div className={`animate-pulse rounded-md bg-neutral-300/50 ${className}`} />
     );
 }
 
 export function InventoryPage() {
-    const [tables, setTables] = useState<InventoryTable[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    
+    const queryClient = useQueryClient();
+
     // Create Status State
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -43,41 +51,68 @@ export function InventoryPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingTable, setEditingTable] = useState<InventoryTable | null>(null);
     const [newTableName, setNewTableName] = useState("");
-    const [isEditing, setIsEditing] = useState(false);
 
     // Delete State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingTable, setDeletingTable] = useState<InventoryTable | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
 
-    useEffect(() => {
-        const fetchTables = async () => {
+    // --- PAGINATION STATE ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    // --- FETCH QUERY ---
+    const { data: tables = [], isLoading } = useQuery<InventoryTable[]>({
+        queryKey: ['tables'],
+        queryFn: async () => {
             const token = localStorage.getItem("token");
-            try {
-                const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
-                    method: 'GET',
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-                if (!res.ok) throw new Error("Failed to fetch");
-                
-                const data = await res.json();
-                setTables(data);
-            } catch (error) {
-                console.error("Error loading tables:", error);
-            } finally {
-                setIsLoading(false);
-            }
+            const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch");
+            return res.json();
         }
-        fetchTables();
-    }, []);
+    });
+
+    // --- PAGINATION LOGIC ---
+    const totalPages = Math.ceil(tables.length / ITEMS_PER_PAGE);
+    // Ensure we don't land on an empty page if the last item of a page is deleted
+    const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+    const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    const currentTables = tables.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    // --- CREATE MUTATION ---
+    const createMutation = useMutation({
+        mutationFn: async (formData: { name: string, attributes: string[] }) => {
+            const token = localStorage.getItem("token");
+            const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(formData)
+            });
+            if (!res.ok) throw new Error("Failed to save data");
+            return res.json();
+        },
+        onSuccess: (newTable) => {
+            queryClient.setQueryData(['tables'], (old: InventoryTable[] | undefined) => [newTable, ...(old || [])]);
+            setSaveStatus('success');
+            setStatusMessage(`${newTable.name} has been created successfully.`);
+            // Optional: reset to page 1 to see the newly created table
+            setCurrentPage(1);
+        },
+        onError: () => {
+            setSaveStatus('error');
+            setStatusMessage("We couldn't save your table. Please check your connection.");
+        }
+    });
 
     const handleSaveNewTable = async (formData: { tableName: string, attributes: string[] }) => {
         const token = localStorage.getItem("token");
         if (!token) return false;
-            
+
         const isNameEmpty = !formData.tableName || formData.tableName.trim() === "";
         const isAttributesEmpty = !formData.attributes || formData.attributes.length === 0;
 
@@ -85,99 +120,85 @@ export function InventoryPage() {
             setSaveStatus('error');
             setStatusMessage(isNameEmpty ? "Please enter a table name." : "Please select at least one attribute.");
             setIsStatusModalOpen(true);
-            return false; 
+            return false;
         }
 
         setIsStatusModalOpen(true);
         setSaveStatus('loading');
         setStatusMessage("Saving your new table...");
 
-        try {
-            const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    name: formData.tableName,
-                    attributes: formData.attributes,
-                })
-            });
-
-            if (!res.ok) throw new Error("Failed to save data");
-
-            const newTable = await res.json();
-            setTables((prev) => [newTable, ...prev]);
-            setSaveStatus('success');
-            setStatusMessage(`${newTable.name} has been created successfully.`);
-            return true; 
-        } catch (error) {
-            setSaveStatus('error');
-            setStatusMessage("We couldn't save your table. Please check your connection.");
-            return false;
-        }
+        createMutation.mutate({ name: formData.tableName, attributes: formData.attributes });
+        return true;
     };
 
-    // --- NEW EDIT LOGIC ---
+    // --- EDIT MUTATION ---
+    const editMutation = useMutation({
+        mutationFn: async ({ id, name }: { id: string, name: string }) => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name })
+            });
+            if (!res.ok) throw new Error("Failed to update table");
+            return res.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.setQueryData(['tables'], (old: InventoryTable[] | undefined) =>
+                old?.map(t => t._id === variables.id ? { ...t, name: variables.name } : t)
+            );
+            toast.success("Table name updated successfully.");
+            setIsEditModalOpen(false);
+        },
+        onError: () => {
+            toast.error("Failed to update table name.");
+        }
+    });
+
     const openEditModal = (e: React.MouseEvent, table: InventoryTable) => {
-        e.preventDefault(); // Prevents the Link from redirecting
+        e.preventDefault();
         setEditingTable(table);
         setNewTableName(table.name);
         setIsEditModalOpen(true);
     };
 
-    const handleEditTable = async () => {
+    const handleEditTable = () => {
         if (!editingTable || !newTableName.trim()) return;
-        setIsEditing(true);
-        const token = localStorage.getItem("token");
-
-        try {
-            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${editingTable._id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ name: newTableName })
-            });
-
-            if (!res.ok) throw new Error("Failed to update table");
-
-            // Update UI State locally
-            setTables((prev) => prev.map(t => t._id === editingTable._id ? { ...t, name: newTableName } : t));
-            toast.success("Table name updated successfully.");
-            setIsEditModalOpen(false);
-        } catch (error) {
-            toast.error("Failed to update table name.");
-        } finally {
-            setIsEditing(false);
-        }
+        editMutation.mutate({ id: editingTable._id, name: newTableName });
     };
 
-    // --- NEW DELETE LOGIC ---
+    // --- DELETE MUTATION ---
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to delete table");
+            return id;
+        },
+        onSuccess: (deletedId) => {
+            queryClient.setQueryData(['tables'], (old: InventoryTable[] | undefined) =>
+                old?.filter(t => t._id !== deletedId)
+            );
+            toast.success("Table and all contents deleted successfully.");
+            setIsDeleteModalOpen(false);
+        },
+        onError: () => {
+            toast.error("Failed to delete the table.");
+        }
+    });
+
     const openDeleteModal = (e: React.MouseEvent, table: InventoryTable) => {
-        e.preventDefault(); // Prevents the Link from redirecting
+        e.preventDefault();
         setDeletingTable(table);
         setIsDeleteModalOpen(true);
     };
 
-    const handleDeleteTable = async () => {
+    const handleDeleteTable = () => {
         if (!deletingTable) return;
-        setIsDeleting(true);
-        const token = localStorage.getItem("token");
-
-        try {
-            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${deletingTable._id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!res.ok) throw new Error("Failed to delete table");
-
-            // Remove from UI
-            setTables((prev) => prev.filter(t => t._id !== deletingTable._id));
-            toast.success("Table and all contents deleted successfully.");
-            setIsDeleteModalOpen(false);
-        } catch (error) {
-            toast.error("Failed to delete the table.");
-        } finally {
-            setIsDeleting(false);
-        }
+        deleteMutation.mutate(deletingTable._id);
     };
 
     return (
@@ -193,15 +214,15 @@ export function InventoryPage() {
                         <span className="ml-auto"><CreateTable onSave={handleSaveNewTable} /></span>
                     </h5>
                     <div>
-                        <span className="text-neutral-400">Tables Created: </span> 
+                        <span className="text-neutral-400">Tables Created: </span>
                         <span className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[14px]">{tables.length}</span>
                     </div>
                 </div>
-                
+
                 <div className="tableLoc flex flex-col gap-y-4">
                     {isLoading ? (
-                        [1,2,3,4].map((i) => (
-                            <div key={i} className="flex flex-row gap-x-4 border border-white/5 rounded-[0.625rem] bg-neutral-900 p-10 items-center w-full">
+                        [1, 2, 3, 4].map((i) => (
+                            <div key={i} className="flex flex-row gap-x-4 border border-white/5 rounded-[0.625rem] bg-neutral-300 p-10 items-center w-full">
                                 <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
                                 <div className="flex-1 flex flex-row gap-2">
                                     <Skeleton className="h-6 w-3/4 max-w-[300px]" />
@@ -214,30 +235,29 @@ export function InventoryPage() {
                             No inventory tables created yet.
                         </div>
                     ) : (
-                        tables.map((item, index) => (
-                            // Add 'group' here to trigger child visibility on hover
+                        currentTables.map((item, index) => (
                             <Link key={item._id} to={`/table/${item._id}`} className="group">
-                                <div className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-white/10 rounded-[0.625rem] bg-neutral-900 p-10 items-center">
-                                    <div className="text-sm text-neutral-400">{index + 1}.</div>
+                                <div className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] bg-neutral-300 p-10 items-center">
+                                    <div className="text-sm text-neutral-900">{startIndex + index + 1}.</div>
                                     <Sheet className="w-6 h-6 text-neutral-300" />
-                                    
+
                                     <div className="flex-1 flex items-start gap-x-4">
-                                        <span className="text-lg font-medium">{item.name}</span>
+                                        <span className="text-lg font-medium text-neutral-900">{item.name}</span>
                                     </div>
-                                    
+
                                     {/* Action Buttons: Only visible on group hover */}
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity mr-4">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             className="h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800"
                                             onClick={(e) => openEditModal(e, item)}
                                         >
                                             <Edit2 className="h-4 w-4" />
                                         </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                                             onClick={(e) => openDeleteModal(e, item)}
                                         >
@@ -245,7 +265,7 @@ export function InventoryPage() {
                                         </Button>
                                     </div>
 
-                                    <span className="ml-auto text-neutral-400 text-sm">
+                                    <span className="ml-auto text-neutral-600 text-sm">
                                         Created: {new Date(item.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
@@ -253,6 +273,33 @@ export function InventoryPage() {
                         ))
                     )}
                 </div>
+
+                {/* PAGINATION CONTROLS */}
+                {tables.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={safeCurrentPage === 1}
+                            className="cursor-pointer"
+                        >
+                            Previous
+                        </Button>
+                        <span className="text-sm text-neutral-900 font-medium">
+                            Page {safeCurrentPage} of {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={safeCurrentPage === totalPages}
+                            className="cursor-pointer"
+                        >
+                            Next
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Existing Create Status Dialog */}
@@ -287,17 +334,17 @@ export function InventoryPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Input 
-                            value={newTableName} 
-                            onChange={(e) => setNewTableName(e.target.value)} 
+                        <Input
+                            value={newTableName}
+                            onChange={(e) => setNewTableName(e.target.value)}
                             className="bg-neutral-800 border-neutral-700 text-white"
                             placeholder="Table Name"
                         />
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} disabled={isEditing}>Cancel</Button>
-                        <Button onClick={handleEditTable} disabled={isEditing || !newTableName.trim()}>
-                            {isEditing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+                        <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} disabled={editMutation.isPending}>Cancel</Button>
+                        <Button onClick={handleEditTable} disabled={editMutation.isPending || !newTableName.trim()}>
+                            {editMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -311,16 +358,16 @@ export function InventoryPage() {
                             <AlertCircle className="h-5 w-5" /> Confirm Deletion
                         </DialogTitle>
                         <DialogDescription className="text-neutral-400">
-                            Are you absolutely sure you want to delete <span className="text-white font-bold">{deletingTable?.name}</span>? 
+                            Are you absolutely sure you want to delete <span className="text-white font-bold">{deletingTable?.name}</span>?
                             This action cannot be undone. <span className="text-red-400">All inventory items inside this table will be permanently deleted.</span>
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="mt-4">
-                        <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting}>Cancel</Button>
-                        <Button variant="destructive" className="bg-red-600 hover:bg-red-700" onClick={handleDeleteTable} disabled={isDeleting}>
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, delete table"}
+                    <div className="py-4 mt-4 flex justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} disabled={deleteMutation.isPending}>Cancel</Button>
+                        <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteTable} disabled={deleteMutation.isPending}>
+                            {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, delete table"}
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

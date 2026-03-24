@@ -19,57 +19,59 @@ const items = [
         title: "Main Dashboard",
         url: "/dashboard",
         icon: Home,
-    }, 
+    },
     {
         title: "Manage Inventory",
         url: "/inventory",
         icon: List,
-    }, 
+    },
     {
         title: "Manage Reports",
         url: "/reports",
         icon: Newspaper,
-    }, 
+    },
     {
         title: "Audit Logs",
         url: "/audit-logs",
         icon: Settings,
-    }, 
+    },
 ]
 export function AppSidebar() {
     const { isMobile, setOpenMobile } = useSidebar();
     return (
-         
-    
-        <Sidebar>
-            <SidebarContent>
-                <SidebarGroup>
-                    <div className="flex justify-center">
-                        <img src={logo} className="h-36" />
-                    </div>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                        {items.map((item) => (
-                        <SidebarMenuItem key={item.title} className="">
-                            <SidebarMenuButton asChild>
-                                    <Link to={item.url} onClick={() => {
-                                        if (isMobile) {
-                                            setOpenMobile(false);
-                                        }
-                                }}>
-                                        <item.icon />
-                                        <span>{item.title}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                    </SidebarMenu>
-                </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-            <SidebarFooter>
-                <LogOut />
-            </SidebarFooter>
-        </Sidebar>
+
+        <div className="dark">
+            <Sidebar>
+                <SidebarContent>
+                    <SidebarGroup>
+                        <div className="flex justify-center">
+                            <img src={logo} className="h-36" />
+                        </div>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {items.map((item) => (
+                                    <SidebarMenuItem key={item.title} className="">
+                                        <SidebarMenuButton asChild>
+                                            <Link to={item.url} onClick={() => {
+                                                if (isMobile) {
+                                                    setOpenMobile(false);
+                                                }
+                                            }}>
+                                                <item.icon />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                </SidebarContent>
+                <SidebarFooter>
+                    <LogOut />
+                </SidebarFooter>
+            </Sidebar>
+        </div>
+
     )
 }
