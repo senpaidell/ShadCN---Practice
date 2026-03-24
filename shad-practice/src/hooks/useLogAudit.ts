@@ -10,7 +10,7 @@ export function useLogAudit() {
     return useMutation({
         mutationFn: async (payload: AuditPayload) => {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:5000/api/audits", {
+            const res = await fetch("https://coshts-backend.vercel.app/api/audits", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

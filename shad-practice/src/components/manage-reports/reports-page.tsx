@@ -61,7 +61,7 @@ export default function GeneratePage() {
         queryKey: ['tables'],
         queryFn: async () => {
             const token = localStorage.getItem("token");
-            const res = await fetch('http://localhost:5000/api/tables', {
+            const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch");
@@ -95,7 +95,7 @@ export default function GeneratePage() {
             // Determine which type to send to the backend
             const queryType = reportType === 'custom' ? 'summary' : reportType;
 
-            const res = await fetch(`http://localhost:5000/api/items/report/${selectedTable._id}?type=${queryType}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/report/${selectedTable._id}?type=${queryType}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 

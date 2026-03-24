@@ -43,7 +43,7 @@ export default function Notification() {
     const token = localStorage.getItem("token")
     const fetchTableItems = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/items/${id}`, {
+        const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
           method: 'GET',
           headers: {
             "Content-Type": "application/json",

@@ -82,7 +82,7 @@ function TableGroup({ table }: { table: InventoryTable }) {
             const token = localStorage.getItem("token");
 
             // NOTE: You may need to adjust the URL and payload to match your exact backend controller logic
-            const res = await fetch(`http://localhost:5000/api/items/${selectedItem._id}/stock`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${selectedItem._id}/stock`, {
                 method: 'PATCH',
                 headers: {
                     "Content-Type": "application/json",
