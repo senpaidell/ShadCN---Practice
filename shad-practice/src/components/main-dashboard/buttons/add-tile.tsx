@@ -31,6 +31,7 @@ interface SelectedItem {
 
 interface AddTileProps {
     onSaveSuccess: () => void;
+    isLimitReached: boolean;
 }
 
 function Skeleton({ className }: { className?: string }) {
@@ -40,7 +41,7 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 
-export default function AddTile({ onSaveSuccess }: AddTileProps) {
+export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps) {
     const [tables, setTables] = useState<InventoryTable[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -168,6 +169,17 @@ export default function AddTile({ onSaveSuccess }: AddTileProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        )
+    }
+
+    if (isLimitReached) {
+        return (
+            <div className="flex flex-col justify-center items-center border-neutral-800 border-2 border-dashed h-64 w-full rounded-[0.625rem] bg-neutral-900/50 opacity-70 cursor-not-allowed p-4">
+                <h5 className="text-neutral-400 text-center font-medium">
+                    Tile Limit Exceeded <br />
+                    <span className="text-xs text-neutral-500 font-normal mt-2 block">Please clear tiles to add more.</span>
+                </h5>
+            </div>
         )
     }
 

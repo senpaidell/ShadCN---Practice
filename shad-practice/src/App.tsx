@@ -11,9 +11,19 @@ import ProfilePage from "./components/profile/profile-page";
 import SignUp from "./components/login/signup";
 import ProtectedRoute from "./components/login/ProtectedRoute";
 import CoshAuth from "./components/login/CoshAuth2";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error: any) => {
+      if (error.response?.status === 401) {
+        console.log("Session expired. Logging out...");
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/login"
+      }
+    }
+  })
+});
 
 const router = createBrowserRouter([
   {
