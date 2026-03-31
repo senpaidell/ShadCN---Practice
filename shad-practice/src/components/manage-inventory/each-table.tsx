@@ -114,7 +114,11 @@ export default function EachTable() {
                 },
                 body: JSON.stringify(itemData),
             });
-            if (!res.ok) throw new Error("Failed to save item");
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("🔥 BACKEND REJECTED DATA:", errorData);
+                throw new Error(errorData.error || "Failed to save item");
+            }
             return res.json();
         },
         onMutate: () => {

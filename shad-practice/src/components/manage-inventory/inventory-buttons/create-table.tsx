@@ -19,11 +19,9 @@ import { Form } from "@/components/ui/form";
 const tableOptions = [
   { id: 1, name: "Name", type: "string" },
   { id: 2, name: "Volume", type: "number" },
-  { id: 3, name: "Unit", type: "string" },
-  { id: 4, name: "In Stock", type: "number" },
-  { id: 5, name: "New Stock", type: "number" },
-  { id: 6, name: "Balance", type: "number" },
-  { id: 7, name: "Expiration", type: "date" },
+  { id: 3, name: "Current Stock", type: "number" },
+  { id: 4, name: "Par Level", type: "number" },
+  { id: 5, name: "Expiration", type: "date" },
 ]
 
 interface CreateTableProps {

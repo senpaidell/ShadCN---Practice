@@ -16,32 +16,16 @@ import { AuthRequest } from "../middleware/authMiddleware";
 //     }
 // }
 
-//UPDATED CREATE ITEM 
 export const addItemToTable = async (req: AuthRequest, res: Response) => {
     try {
-        const {
-            tableId,
-            name,
-            volume,
-            inStock,
-            newStock,
-            expiration,
-        } = req.body;
-
-        const numericInStock = Number(inStock) || 0;
-        const numericNewStock = Number(newStock) || 0;
-        const numericVolume = Number(volume) || 0;
-
-        const totalStock = numericInStock + numericNewStock;
-        const calculatedBalance = totalStock > 0 ? (numericInStock / totalStock) * 100 : 0;
+        const { tableId, name, volume, currentStock, parLevel, expiration } = req.body;
 
         const itemData: any = {
             tableId,
             name,
-            volume: numericVolume,
-            inStock: numericInStock,
-            newStock: numericNewStock,
-            balance: Math.round(calculatedBalance * 100) / 100,
+            volume: Number(volume) || 0,
+            currentStock: Number(currentStock) || 0,
+            parLevel: Number(parLevel) || 0,
             user: req.user.id
         }
 
@@ -97,21 +81,13 @@ export const getDashboardItems = async (req: AuthRequest, res: Response) => {
 export const updateItem = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, volume, inStock, newStock, expiration } = req.body;
-
-        const numericInStock = Number(inStock) || 0;
-        const numericNewStock = Number(newStock) || 0;
-        const numericVolume = Number(volume) || 0;
-
-        const totalStock = numericInStock + numericNewStock;
-        const calculatedBalance = totalStock > 0 ? (numericInStock / totalStock) * 100 : 0;
+        const { name, volume, currentStock, parLevel, expiration } = req.body;
 
         const updateData: any = {
             name,
-            volume: numericVolume,
-            inStock: numericInStock,
-            newStock: numericNewStock,
-            balance: Math.round(calculatedBalance * 100) / 100,
+            volume: Number(volume) || 0,
+            currentStock: Number(currentStock) || 0,
+            parLevel: Number(parLevel) || 0,
         };
 
         if (expiration) {
@@ -121,7 +97,7 @@ export const updateItem = async (req: AuthRequest, res: Response) => {
         const updatedItem = await Item.findOneAndUpdate(
             { _id: id as string, user: req.user.id },
             updateData,
-            { new: true } // Returns the updated document
+            { new: true }
         );
 
         if (!updatedItem) {
@@ -168,7 +144,7 @@ export const getReportData = async (req: AuthRequest, res: Response) => {
             sort.expiration = 1;
         } else if (type === 'restocking') {
             // Sort by lowest balance first so they appear at the top of the report
-            sort.balance = 1;
+            sort.currentStock = 1;
         } else {
             // Default summary sorting (newest first or alphabetical)
             sort.createdAt = -1;
@@ -186,37 +162,25 @@ export const updateItemStock = async (req: AuthRequest, res: Response) => {
         const { id } = req.params;
         const { action, quantity } = req.body;
 
-        // Find the item in the database
-        const item = await Item.findById(id); // Ensure you have your Item model imported
+        const item = await Item.findById(id);
 
-        if (!item) {
-            return res.status(404).json({ message: "Item not found" });
-        }
+        if (!item) return res.status(404).json({ message: "Item not found" });
 
-        // Parse quantity to ensure it's a clean number
         const qty = parseInt(quantity) || 1;
 
         if (action === "in") {
-            // Increase 'In Stock' and 'New Stock'
-            item.inStock = (item.inStock || 0) + qty;
-            item.newStock = (item.newStock || 0) + qty;
-
+            // Only update currentStock, newStock is gone!
+            item.currentStock = (item.currentStock || 0) + qty;
         } else if (action === "out") {
-            // Check if they are trying to stock out more than they have (Optional but recommended)
-            if ((item.inStock || 0) < qty) {
+            if ((item.currentStock || 0) < qty) {
                 return res.status(400).json({ message: "Not enough stock to deduct this amount." });
             }
-
-            // Decrease 'In Stock'
-            item.inStock = (item.inStock || 0) - qty;
-
+            item.currentStock = (item.currentStock || 0) - qty;
         } else {
-            return res.status(400).json({ message: "Invalid action type. Must be 'in' or 'out'." });
+            return res.status(400).json({ message: "Invalid action type." });
         }
 
-        // Save the updated item
         const updatedItem = await item.save();
-
         res.status(200).json(updatedItem);
 
     } catch (error) {

@@ -52,8 +52,8 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
     const itemData = {
       tableId: tableData._id,
       name: name,
-      inStock: Number(dynamicValues["In Stock"]) || 0,
-      newStock: Number(dynamicValues["New Stock"]) || 0,
+      currentStock: Number(dynamicValues["Current Stock"]) || 0,
+      parLevel: Number(dynamicValues["Par Level"]) || 0,
       volume: Number(dynamicValues["Volume"]) || 0,
       expiration: dynamicValues["Expiration"] || undefined
     }
