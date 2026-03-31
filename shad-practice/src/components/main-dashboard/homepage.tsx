@@ -1,13 +1,14 @@
 import { Button } from "../ui/button"
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import { PieChartComponent } from "../charts/piechart";
 import { ToolTipCosh } from "../charts/tooltipchart";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { QuickMode } from "./quickmode";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AddTile from "./buttons/add-tile";
 import { Skeleton } from "../ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
     Carousel,
     CarouselContent,
@@ -15,6 +16,15 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "../ui/carousel"
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog";
 
 let inStock = 4;
 let maxStock = 8;
@@ -37,6 +47,7 @@ export function HomePage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const hours = new Date().getHours();
+    const [tileToDelete, setTileToDelete] = useState<string | null>(null);
 
     const { data: users } = useQuery({
         queryKey: ["users"],
@@ -53,6 +64,24 @@ export function HomePage() {
             return res.json();
         }
     });
+
+    const deleteTileMutation = useMutation({
+        mutationFn: async (tileId: string) => {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tileItems/${tileId}`, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+            if (!res.ok) throw new Error("Failed to delete tile");
+            return res.json();
+        },
+        onSuccess: () => {
+            fetchTileItems();
+            setTileToDelete(null)
+        }
+    })
 
     const { data: tables } = useQuery<InventoryTable[]>({
         queryKey: ["tables"],
@@ -167,19 +196,33 @@ export function HomePage() {
                                 className="w-full cursor-grab active:cursor-grabbing"
                             >
                                 <CarouselContent className="-ml-4">
-
-                                    {/* LOADING STATE - Uses TanStack Query's isLoading status now */}
                                     {isLoadingTiles ? (
                                         Array.from({ length: 4 }).map((_, index) => (
                                             <CarouselItem key={index} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
                                                 <Skeleton className="h-64 w-full rounded-[0.625rem] bg-neutral-800" />
                                             </CarouselItem>
                                         ))
+                                    ) : tilesRemaining.length === 0 ? (
+                                        Array.from({ length: 4 }).map((_, index) => (
+                                            <CarouselItem key={`empty-${index}`} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
+                                                <div className="flex items-center justify-center h-64 w-full rounded-[0.625rem] border-2 border-dashed border-neutral-700 bg-neutral-800/30">
+                                                    <span className="text-neutral-500 font-medium">No tiles added yet</span>
+                                                </div>
+                                            </CarouselItem>
+                                        ))
                                     ) : (
                                         <>
-                                            {Array.isArray(tileItems) && tilesRemaining.map((items) => (
+                                            {tilesRemaining.map((items) => (
                                                 <CarouselItem key={items.id} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
                                                     <div className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out relative border-white/10 border-1 h-64 w-full rounded-[0.625rem] ${items.percentage >= 50 ? "bg-linear-to-t from-sky-500 to-indigo-500" : "bg-linear-65 from-purple-500 to-pink-500"}`}>
+
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTileToDelete(items.id);
+                                                        }} className="absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full bg-black/40 text-white hover:bg-red-500 transition z-20 cursor-pointer">
+                                                            <CloseIcon fontSize="small" />
+                                                        </button>
+
                                                         <span className="p-4 absolute top-0 left-0 text-sm font-semibold text-neutral-200">
                                                             <span className="text-neutral-400">Table: </span>{items.table}
                                                         </span>
@@ -204,18 +247,44 @@ export function HomePage() {
                         </div>
 
                         <div className="flex-shrink-0 w-full xl:w-[280px]">
-                            {/* Passed the query refetch directly */}
-                            <AddTile onSaveSuccess={fetchTileItems} />
+                            <AddTile onSaveSuccess={fetchTileItems} isLimitReached={tilesRemaining.length >= 10} />
                         </div>
 
                     </div>
                 </div>
 
-                <div className="charts lg:flex gap-x-4 h-fit lg:flex-row grid sm:grid-cols-1 gap-y-4">
-                    <div className="chart1 h-full w-full overflow-y-hidden"><PieChartComponent /></div>
-                    <div className="chart2 h-full w-full overflow-y-hidden"><ToolTipCosh /></div>
+                <div className="charts grid grid-cols-1 lg:grid-cols-2 gap-4 w-full mt-4">
+                    <PieChartComponent />
+                    <ToolTipCosh />
                 </div>
             </div>
+
+            <Dialog open={!!tileToDelete} onOpenChange={(open) => !open && setTileToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Tile</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove this inventory tile? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" className="cursor-pointer">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            className="cursor-pointer bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => tileToDelete && deleteTileMutation.mutate(tileToDelete)}
+                            disabled={deleteTileMutation.isPending}
+                        >
+                            {deleteTileMutation.isPending ? "Deleting..." : "Delete"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }

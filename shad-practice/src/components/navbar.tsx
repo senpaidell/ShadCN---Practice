@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, CircleUser, Loader2, Package, Sheet } from "lucide-react";
 import Badge from '@mui/material/Badge';
 import MailIcon from '@mui/icons-material/Mail';
-import { useDebounce } from "@/hooks/useDebounce"; // Adjust path as needed
+import { useDebounce } from "@/hooks/useDebounce";
+import { useLowStockItems } from "@/hooks/useLowStockItems";
 
 import {
     InputGroup,
@@ -18,6 +19,7 @@ export function NavBar() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const { lowStockItems } = useLowStockItems();
     // Wait 300ms after the user stops typing before searching
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -124,6 +126,9 @@ export function NavBar() {
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium text-neutral-900">{item.name}</span>
                                                 <span className="text-xs text-neutral-500">In Stock: {item.inStock}</span>
+                                                <span>•</span>
+                                                {/* Display the populated table name */}
+                                                <span>Table: {item.tableId?.name || "Unknown"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -137,7 +142,7 @@ export function NavBar() {
             {/* RIGHT SIDE ICONS */}
             <div className="ml-auto flex items-center gap-x-6 text-neutral-300">
                 <Link to="/notifications" className="hover:text-white transition-colors">
-                    <Badge badgeContent={69} color="primary">
+                    <Badge badgeContent={lowStockItems.length} color="primary">
                         <MailIcon sx={{ fontSize: 26 }} />
                     </Badge>
                 </Link>

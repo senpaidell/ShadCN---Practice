@@ -1,74 +1,3 @@
-// import { Bar, BarChart, XAxis } from "recharts"
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
-// import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../ui/chart"
-
-// export const description = "A stacked bar chart with a legend"
-// export const iframeHeight = "600px"
-// export const containerClassName =
-//   "[&>div]:w-full [&>div]:max-w-md flex items-center justify-center min-h-svh"
-
-
-// const chartData = [
-//     {
-//         item: "Flour",
-//         percentage: 275,
-//         fill: "#0070F3"
-//     },
-//     {
-//         item: "Sugar",
-//         percentage: 200,
-//         fill: "#79FFE1"
-//     },
-//     {
-//         item: "Milk",
-//         percentage: 187,
-//         fill: "#F81CE5"
-//     },
-//     {
-//         item: "Butter",
-//         percentage: 173,
-//         fill: "#FFAA00"
-//     },
-//     {
-//         item: "Eggs",
-//         percentage: 90,
-//         fill: "#EDEDED"
-//     },
-// ]
-
-// const chartConfig = {
-//     percentage: {
-//         label: "Percentage",
-//     },
-// } satisfies ChartConfig
-
-// export function ToolTipCosh() {
-//     return (
-//         <>
-//             <Card>
-//                 <CardHeader>
-//                     <CardTitle>
-//                         Most Used Items
-//                     </CardTitle>
-//                     <CardDescription>
-//                         January - June 2024
-//                     </CardDescription>
-//                 </CardHeader>
-
-//                 <CardContent>
-//                     <ChartContainer config={chartConfig} className="">
-//                         <BarChart accessibilityLayer data={chartData}>
-//                             <XAxis dataKey="item" />
-//                             <Bar dataKey="percentage" stackId="a" fill="#0070F3" radius={[4, 4, 0, 0]} />
-//                             <ChartTooltip content={<ChartTooltipContent />} cursor={false} defaultIndex={1} />
-//                         </BarChart>
-//                     </ChartContainer>
-//                 </CardContent>
-//             </Card>
-//         </>
-//     )
-// }
-
 import { useState, useMemo, useEffect } from "react";
 import { Bar, BarChart, XAxis, Cell } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
@@ -101,7 +30,6 @@ const CHART_COLORS = [
 export function ToolTipCosh() {
     const [open, setOpen] = useState(false);
 
-    // We use a different localStorage key here so the Bar Chart and Pie Chart can show different tables!
     const [selectedTableId, setSelectedTableId] = useState<string | null>(() => {
         return localStorage.getItem("preferredBarChartTable") || null;
     });
@@ -187,7 +115,7 @@ export function ToolTipCosh() {
     };
 
     return (
-        <Card className="flex flex-col h-full relative">
+        <Card className="flex flex-col h-full w-full min-h-[400px] relative">
             <CardHeader className="items-start pb-0 pr-12">
                 <div className="flex justify-between items-start w-full">
                     <div>
@@ -198,7 +126,6 @@ export function ToolTipCosh() {
                     </div>
                 </div>
 
-                {/* --- DIALOG MODAL IMPLEMENTATION --- */}
                 <Dialog open={open} onOpenChange={(val) => {
                     setOpen(val);
                     if (val) setTempTableId(selectedTableId);
@@ -270,7 +197,6 @@ export function ToolTipCosh() {
                 </Dialog>
             </CardHeader>
 
-            {/* --- BAR CHART DISPLAY --- */}
             <CardContent className="flex-1 pb-4 mt-4">
                 {isLoading ? (
                     <div className="h-[200px] w-full flex items-end gap-2">
@@ -279,7 +205,7 @@ export function ToolTipCosh() {
                         ))}
                     </div>
                 ) : chartData.length === 0 ? (
-                    <div className="h-[200px] flex items-center justify-center text-neutral-500 text-sm">
+                    <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
                         No active stock found.
                     </div>
                 ) : (

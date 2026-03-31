@@ -33,7 +33,13 @@ export const globalSearch = async (req: AuthRequest, res: Response) => {
             Item.find({
                 name: searchRegex,
                 user: req.user.id
-            }).limit(5).select('name tableId inStock') // Only fetch the fields we need for the dropdown
+            }).limit(5).populate(
+                {
+                    path: 'tableId',
+                    model: 'InventoryTable',
+                    select: 'name'
+                }
+            ).select('name tableId inStock') // Only fetch the fields we need for the dropdown
         ]);
 
         res.status(200).json({ tables, items });
