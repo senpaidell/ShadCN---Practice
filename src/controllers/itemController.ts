@@ -144,7 +144,7 @@ export const getReportData = async (req: AuthRequest, res: Response) => {
             sort.expiration = 1;
         } else if (type === 'restocking') {
             // Sort by lowest balance first so they appear at the top of the report
-            sort.balance = 1;
+            sort.currentStock = 1;
         } else {
             // Default summary sorting (newest first or alphabetical)
             sort.createdAt = -1;
