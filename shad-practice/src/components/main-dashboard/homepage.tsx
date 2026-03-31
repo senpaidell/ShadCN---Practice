@@ -8,7 +8,7 @@ import { QuickMode } from "./quickmode";
 import { useEffect, useState } from "react";
 import AddTile from "./buttons/add-tile";
 import { Skeleton } from "../ui/skeleton";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Carousel,
     CarouselContent,
@@ -49,6 +49,8 @@ export function HomePage() {
     const hours = new Date().getHours();
     const [tileToDelete, setTileToDelete] = useState<string | null>(null);
 
+    const queryClient = useQueryClient();
+
     const { data: users } = useQuery({
         queryKey: ["users"],
         queryFn: async () => {
@@ -73,15 +75,28 @@ export function HomePage() {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
-            })
-            if (!res.ok) throw new Error("Failed to delete tile");
-            return res.json();
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || "Failed to delete tile");
+            }
+
+            const responseText = await res.text();
+            return responseText ? JSON.parse(responseText) : {};
         },
         onSuccess: () => {
             fetchTileItems();
-            setTileToDelete(null)
+            console.log("onSuccess Activated")
+        },
+        onError: (error) => {
+            console.error("Delete mutation error:", error);
+        },
+        onSettled: () => {
+            setTileToDelete(null);
+            console.log("onSettled Activated")
         }
-    })
+    });
 
     const { data: tables } = useQuery<InventoryTable[]>({
         queryKey: ["tables"],
