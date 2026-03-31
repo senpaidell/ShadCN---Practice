@@ -1,12 +1,11 @@
-import mongoose, {Schema, Document} from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 interface IItem extends Document {
     tableId: mongoose.Types.ObjectId;
     name: string;
     volume?: number;
-    inStock: number;
-    newStock: number;
-    balance: number;
+    currentStock: number;
+    parLevel: number;
     expiration?: Date;
     user: mongoose.Types.ObjectId;
 }
@@ -90,15 +89,11 @@ const ItemSchema = new Schema<IItem>({
         type: Number,
         default: 0
     },
-    inStock: {
+    currentStock: {
         type: Number,
         default: 0
     },
-    newStock: {
-        type: Number,
-        default: 0
-    },
-    balance: {
+    parLevel: {
         type: Number,
         default: 0
     },
@@ -106,8 +101,8 @@ const ItemSchema = new Schema<IItem>({
         type: Date
     }
 },
-{
-    timestamps: true
-});
+    {
+        timestamps: true
+    });
 
-export const Item = mongoose.models.Item ||mongoose.model<IItem>("Item", ItemSchema);
+export const Item = mongoose.models.Item || mongoose.model<IItem>("Item", ItemSchema);

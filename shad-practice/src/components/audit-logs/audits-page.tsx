@@ -61,7 +61,7 @@ export default function AuditLogsPage() {
           <span className="sm:ml-auto">
 
             {/* FILTER DIALOG */}
-            <Dialog>
+            {/* <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" className="rounded-md px-6 h-8 text-xs font-bold w-full sm:w-auto">
                   Filter
@@ -107,7 +107,7 @@ export default function AuditLogsPage() {
                   </div>
                 </div>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
 
           </span>
         </h5>
