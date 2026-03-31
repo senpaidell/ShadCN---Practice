@@ -215,7 +215,7 @@ export function InventoryPage() {
                     </h5>
                     <div>
                         <span className="text-neutral-400">Tables Created: </span>
-                        <span className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[14px]">{tables.length}</span>
+                        <span className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[14px]">{isLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : tables.length}</span>
                     </div>
                 </div>
 

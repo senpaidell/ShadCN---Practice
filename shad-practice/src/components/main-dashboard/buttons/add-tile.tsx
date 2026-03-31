@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import AddIcon from '@mui/icons-material/Add';
 import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 interface InventoryTable {
     _id: string,
@@ -40,21 +41,16 @@ function Skeleton({ className }: { className?: string }) {
     );
 }
 
-
 export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps) {
     const [tables, setTables] = useState<InventoryTable[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-    const [saveStatus, isSaveStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [statusMessage, setStatusMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
     const [open, setOpen] = useState(false);
     const [tableOpen, setTableOpen] = useState(false);
     const [rows, setRows] = useState<any[]>([])
     const { id } = useParams();
     const [tableID, setTableId] = useState<string | undefined>();
     const [isItemsLoading, setIsItemsLoading] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
 
     useEffect(() => {
@@ -131,45 +127,21 @@ export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps)
         }
     }
 
-    console.log("Here are the selected IDs", selectedIds);
-
     const saveAll = async () => {
-        for (const item of selectedItems) {
-            await uploadItemTableID(item._id, item.tableId)
+        setIsSaving(true);
+        try {
+            for (const item of selectedItems) {
+                await uploadItemTableID(item._id, item.tableId)
+            }
+            onSaveSuccess();
+            setSelectedItems([]);
+            setTableOpen(false);
+            setOpen(false);
+        } catch (error) {
+            console.error("Failed to save items", error);
+        } finally {
+            setIsSaving(false);
         }
-        onSaveSuccess();
-        setSelectedItems([]);
-        setTableOpen(false);
-        setOpen(false)
-    }
-
-    function AreYouSure() {
-        return (
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button type="submit" className="cursor-pointer">Save changes</Button>
-                </DialogTrigger>
-
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            Confirm Tile Choices
-                        </DialogTitle>
-                        <DialogDescription>
-                            Are you sure with your choices?
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button type="button" variant="outline" className="cursor-pointer">Cancel</Button>
-                        </DialogClose>
-
-                        <Button type="submit" className="cursor-pointer" onClick={saveAll}>Save changes</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        )
     }
 
     if (isLimitReached) {
@@ -201,7 +173,6 @@ export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps)
                         <DialogDescription className="flex flex-col items-start">
                             Choose a table and item that you deem very important to watch! <br />
                             <span className="">Tables Available: {tables.length}</span>
-
                         </DialogDescription>
                     </DialogHeader>
                     <div className={tableOpen ? "block flex" : "hidden"}>
@@ -238,7 +209,40 @@ export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps)
                             <Button type="button" variant="outline" className="cursor-pointer" onClick={() => { setOpen(false), setTableOpen(false), setSelectedItems([]) }}>Cancel</Button>
                         </DialogClose>
 
-                        <AreYouSure />
+                        {/* Inlined Confirmation Modal (Previously <AreYouSure />) */}
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button type="button" className="cursor-pointer">Save changes</Button>
+                            </DialogTrigger>
+
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        Confirm Tile Choices
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Are you sure with your choices?
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button type="button" variant="outline" className="cursor-pointer" disabled={isSaving}>Cancel</Button>
+                                    </DialogClose>
+
+                                    <Button type="button" className="cursor-pointer" onClick={saveAll} disabled={isSaving}>
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin inline" />
+                                            </>
+                                        ) : (
+                                            "Save changes"
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
