@@ -25,6 +25,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "../ui/dialog";
+import { Loader2 } from "lucide-react";
 
 let inStock = 4;
 let maxStock = 8;
@@ -194,8 +195,14 @@ export function HomePage() {
                 </div>
 
                 <div className="flex flex-row items-center">
-                    <h5 className="text-neutral-400">Remaining Items Left</h5>
-                    <Link to={`/quickmode/${id}`} className="ml-auto"><Button className="cursor-pointer">Quick Mode</Button></Link>
+                    <h5 className="text-neutral-400 sm:text-sm text-[12px]">Remaining Items Left</h5>
+
+                    <div className="ml-auto flex items-center gap-4">
+                        <h5 className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[10px] sm:text-[14px]">{isLoadingTiles ? <Loader2 className="w-3 h-3 animate-spin inline" /> : `${tilesRemaining.length} / 10`}</h5>
+                        <Link to={`/quickmode/${id}`}>
+                            <Button className="cursor-pointer">Quick Mode</Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="itemsRemaining flex flex-col xl:flex-row gap-4 w-full">
@@ -295,7 +302,7 @@ export function HomePage() {
                             onClick={() => tileToDelete && deleteTileMutation.mutate(tileToDelete)}
                             disabled={deleteTileMutation.isPending}
                         >
-                            {deleteTileMutation.isPending ? "Deleting..." : "Delete"}
+                            {deleteTileMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin inline" /> : "Delete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

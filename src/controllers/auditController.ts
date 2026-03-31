@@ -28,9 +28,9 @@ export const createAuditLog = async (req: AuthRequest, res: Response) => {
 export const getAuditLogs = async (req: AuthRequest, res: Response) => {
     try {
         // Fetch logs, sort by newest first, and populate the user's email
-        const auditLogs = await AuditLog.find()
+        const auditLogs = await AuditLog.find({ user: req.user.id })
             .sort({ createdAt: -1 })
-            .populate("user", "email") // Adjust if your User model fields are different
+            .populate("user", "email")
             .exec();
 
         res.status(200).json(auditLogs);
