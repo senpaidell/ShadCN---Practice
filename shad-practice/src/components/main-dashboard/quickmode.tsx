@@ -1,6 +1,6 @@
 import { Button } from "../ui/button"
 import { Link } from "react-router-dom";
-import { Image, Minus, Plus } from "lucide-react";
+import { Image, Minus, Plus, ArrowRight, Loader2 } from "lucide-react"; // Added ArrowRight & Loader2
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "../ui/skeleton";
@@ -18,6 +18,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogDescription // Added DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
@@ -117,6 +118,11 @@ function TableGroup({ table }: { table: InventoryTable }) {
         }
     };
 
+    // --- REAL-TIME STOCK MATH ---
+    const currentStockVal = selectedItem?.currentStock || 0;
+    const numQuantity = Number(quantity) || 0;
+    const projectedStock = actionType === "in" ? currentStockVal + numQuantity : currentStockVal - numQuantity;
+
     return (
         <div className="border border-neutral-800 p-4 rounded-[0.625rem] w-full overflow-hidden">
             <span className="text-lg font-bold">{table.name}</span>
@@ -163,23 +169,56 @@ function TableGroup({ table }: { table: InventoryTable }) {
                 </Carousel>
             </div>
 
-            {/* LIGHT MODE MODAL */}
+            {/* LIGHT MODE STOCK MODAL WITH REAL-TIME PREVIEW */}
             <Dialog open={!!selectedItem} onOpenChange={(open) => !open && handleClose()}>
-                <DialogContent className="bg-white text-black border-neutral-200 sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-[450px] bg-white border-gray-200 text-black">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-center">
                             {selectedItem?.name}
                         </DialogTitle>
+                        <DialogDescription className="text-center text-gray-500 mt-1">
+                            Adjust the inventory levels for this item.
+                        </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex flex-col gap-6 py-4">
+                    {/* Real-time Math Preview Box */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2 mb-2">
+                        <div className="flex justify-between items-center text-center">
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-500 uppercase">Current</span>
+                                <span className="text-2xl font-bold text-gray-700">{currentStockVal}</span>
+                            </div>
+
+                            <div className="text-gray-400 px-2">
+                                {actionType === "in" ? <Plus className="h-6 w-6 text-green-600" /> : <Minus className="h-6 w-6 text-red-600" />}
+                            </div>
+
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-500 uppercase">Quantity</span>
+                                <span className="text-2xl font-bold text-gray-700">{numQuantity}</span>
+                            </div>
+
+                            <div className="text-gray-400 px-2">
+                                <ArrowRight className="h-6 w-6" />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-500 uppercase">New Stock</span>
+                                <span className={`text-3xl font-bold ${projectedStock < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                                    {projectedStock}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6 py-2">
                         {/* Action Toggle */}
-                        <div className="flex w-full rounded-md border border-neutral-300 p-1 bg-neutral-100">
+                        <div className="flex w-full rounded-md border border-gray-200 p-1 bg-gray-100">
                             <button
                                 onClick={() => setActionType("in")}
                                 className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "in"
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-neutral-500 hover:text-black"
+                                    ? "bg-white text-black shadow-sm border border-gray-200"
+                                    : "text-gray-500 hover:text-black"
                                     }`}
                             >
                                 Stock In
@@ -187,8 +226,8 @@ function TableGroup({ table }: { table: InventoryTable }) {
                             <button
                                 onClick={() => setActionType("out")}
                                 className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "out"
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-neutral-500 hover:text-black"
+                                    ? "bg-white text-black shadow-sm border border-gray-200"
+                                    : "text-gray-500 hover:text-black"
                                     }`}
                             >
                                 Stock Out
@@ -196,15 +235,14 @@ function TableGroup({ table }: { table: InventoryTable }) {
                         </div>
 
                         {/* Quantity Controller */}
-                        {/* Quantity Controller */}
                         <div className="flex flex-col items-center gap-2">
-                            <span className="text-sm font-semibold text-neutral-600">Quantity</span>
+                            <span className="text-sm font-semibold text-gray-700">Enter Quantity</span>
                             <div className="flex items-center gap-3">
                                 <Button
-                                    type="button" // Prevents the button from acting weird in the modal
+                                    type="button"
                                     variant="outline"
                                     size="icon"
-                                    className="h-10 w-10 border-neutral-300 text-black hover:bg-neutral-100 cursor-pointer"
+                                    className="h-10 w-10 border-gray-300 text-black hover:bg-gray-100 cursor-pointer"
                                     onClick={() => setQuantity(prev => Math.max(1, Number(prev) - 1))}
                                 >
                                     <Minus className="h-4 w-4" />
@@ -215,24 +253,22 @@ function TableGroup({ table }: { table: InventoryTable }) {
                                     value={quantity}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        // Allow empty string for easy deleting, otherwise parse as number
                                         setQuantity(val === "" ? "" : parseInt(val, 10));
                                     }}
                                     onBlur={() => {
-                                        // If the user clicks away while the input is empty or invalid, reset to 1
                                         if (quantity === "" || Number(quantity) < 1 || isNaN(Number(quantity))) {
                                             setQuantity(1);
                                         }
                                     }}
-                                    className="h-10 w-20 text-center text-lg font-bold border-neutral-300 text-black focus-visible:ring-neutral-400"
+                                    className="h-12 w-24 text-center text-xl font-bold border-gray-300 bg-white text-black focus-visible:ring-gray-400 shadow-sm"
                                     min={1}
                                 />
 
                                 <Button
-                                    type="button" // Prevents the button from acting weird in the modal
+                                    type="button"
                                     variant="outline"
                                     size="icon"
-                                    className="h-10 w-10 border-neutral-300 text-black hover:bg-neutral-100 cursor-pointer"
+                                    className="h-10 w-10 border-gray-300 text-black hover:bg-gray-100 cursor-pointer"
                                     onClick={() => setQuantity(prev => Number(prev) + 1)}
                                 >
                                     <Plus className="h-4 w-4" />
@@ -241,13 +277,14 @@ function TableGroup({ table }: { table: InventoryTable }) {
                         </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="mt-2">
                         <Button
-                            className="w-full bg-black text-white hover:bg-neutral-800"
+                            className="w-full bg-black text-white hover:bg-gray-800 cursor-pointer py-6 text-md font-semibold"
                             onClick={handleConfirm}
                             disabled={isUpdating}
                         >
-                            {isUpdating ? "Confirming..." : "Confirm Update"}
+                            {isUpdating ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                            {isUpdating ? "Updating..." : "Confirm Update"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -255,7 +292,6 @@ function TableGroup({ table }: { table: InventoryTable }) {
         </div>
     );
 }
-
 
 // --- 2. MAIN QUICKMODE COMPONENT ---
 export function QuickMode() {

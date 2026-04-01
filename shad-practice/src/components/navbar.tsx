@@ -259,7 +259,7 @@ function SearchResults({ results, isLoading, searchTerm, navigate, closeSearch, 
                                 <div className="flex flex-row justify-between w-full">
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-neutral-900">{item.name}</span>
-                                        <span className="text-xs text-neutral-500">In Stock: {item.inStock}</span>
+                                        <span className="text-xs text-neutral-500">Current Stock: {item.currentStock}</span>
                                     </div>
                                     <div className="hidden sm:block">
                                         <span className="text-xs text-neutral-500">Table: <span className="text-black font-medium">{item.tableId?.name || "Unknown"}</span></span>

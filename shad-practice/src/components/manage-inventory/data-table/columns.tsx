@@ -2,7 +2,6 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { Edit2, Trash2, Package } from "lucide-react"
 import { Button } from "../../ui/button"
 
-// 1. Update your mappings to match the new DB schema
 export const getDbKey = (attrName: string) => {
     if (attrName === "Current Stock") return "currentStock";
     if (attrName === "Par Level") return "parLevel";
@@ -12,7 +11,8 @@ export const getDbKey = (attrName: string) => {
 export const createColumns = (
     attributes: any[],
     onEdit: (item: any) => void,
-    onDelete: (item: any) => void
+    onDelete: (item: any) => void,
+    onStockChange: (item: any) => void // 1. Added new prop here
 ): ColumnDef<any>[] => {
 
     const baseColumns: ColumnDef<any>[] = [
@@ -43,18 +43,15 @@ export const createColumns = (
             };
         })
 
-    // 2. Create the new dynamic Status column
     const statusColumn: ColumnDef<any> = {
         id: "status",
         header: "Status",
         cell: ({ row }) => {
             const current = row.original.currentStock || 0;
-            const par = row.original.parLevel || 1; // Fallback to 1 to avoid Infinity errors if par is 0
+            const par = row.original.parLevel || 1;
 
-            // The health calculation!
             const percentage = Math.round((current / par) * 100);
 
-            // Determine badge colors based on the percentage
             let colorClass = "text-green-500 bg-green-500/10 border-green-500/20";
             let label = "Good";
 
@@ -75,7 +72,6 @@ export const createColumns = (
     }
 
     const actionColumn: ColumnDef<any> = {
-        // ... your existing actionColumn code (Edit, Package, Trash buttons)
         id: "actions",
         header: "",
         cell: ({ row }) => {
@@ -85,8 +81,9 @@ export const createColumns = (
                     <Button variant="ghost" size="icon" className="cursor-pointer h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800" onClick={() => onEdit(item)}>
                         <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" className="cursor-pointer h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800">
-                        <Package />
+                    {/* 2. Hooked up the Package button to our new function */}
+                    <Button variant="ghost" size="icon" className="cursor-pointer h-8 w-8 text-neutral-400 hover:text-white hover:bg-neutral-800" onClick={() => onStockChange(item)}>
+                        <Package className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="cursor-pointer h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10" onClick={() => onDelete(item)}>
                         <Trash2 className="h-4 w-4" />
@@ -96,6 +93,5 @@ export const createColumns = (
         }
     }
 
-    // 3. Inject the status column before the actions
     return [...baseColumns, ...dynamicColumns, statusColumn, actionColumn]
 }

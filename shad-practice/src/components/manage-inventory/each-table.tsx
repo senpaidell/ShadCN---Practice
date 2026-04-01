@@ -18,17 +18,8 @@ import {
     DialogTitle,
     DialogDescription
 } from "../ui/dialog";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, Minus, Plus, ArrowRight } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-
-interface InventoryTable {
-    _id: String,
-    name: string,
-    attributes: string[],
-    icon: any,
-    createdAt: string,
-    url: string
-}
 
 export default function EachTable() {
     const { id } = useParams();
@@ -49,7 +40,11 @@ export default function EachTable() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingItem, setDeletingItem] = useState<any>(null);
 
-    // --- QUERIES ---
+    // Stock Modal State
+    const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+    const [stockItem, setStockItem] = useState<any>(null);
+    const [actionType, setActionType] = useState<"in" | "out">("in");
+    const [quantity, setQuantity] = useState<number | string>(1);
 
     // Fetch Single Table Data
     const { data: tableData, isLoading: isTableLoading } = useQuery({
@@ -57,10 +52,7 @@ export default function EachTable() {
         queryFn: async () => {
             const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch table details");
             return res.json();
@@ -68,32 +60,13 @@ export default function EachTable() {
         enabled: !!id
     });
 
-    // Fetch All Tables
-    // const { data: tables = [], isLoading: isTablesLoading } = useQuery({
-    //     queryKey: ['tables'],
-    //     queryFn: async () => {
-    //         const res = await fetch('https://coshts-backend.vercel.app/api/tables', {
-    //             method: 'GET',
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
-    //         if (!res.ok) throw new Error("Failed to fetch tables");
-    //         return res.json();
-    //     }
-    // });
-
     // Fetch Items for this Table
     const { data: rows = [], isLoading: isItemsLoading } = useQuery({
         queryKey: ['items', id],
         queryFn: async () => {
             const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch items");
             return res.json();
@@ -101,24 +74,15 @@ export default function EachTable() {
         enabled: !!id
     });
 
-    // --- MUTATIONS ---
-
     // Create Item Mutation
     const createItemMutation = useMutation({
         mutationFn: async (itemData: any) => {
             const res = await fetch('https://coshts-backend.vercel.app/api/items', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(itemData),
             });
-            if (!res.ok) {
-                const errorData = await res.json();
-                console.error("🔥 BACKEND REJECTED DATA:", errorData);
-                throw new Error(errorData.error || "Failed to save item");
-            }
+            if (!res.ok) throw new Error("Failed to save item");
             return res.json();
         },
         onMutate: () => {
@@ -131,8 +95,7 @@ export default function EachTable() {
             setSaveStatus('success');
             setStatusMessage('Item has been added successfully.');
         },
-        onError: (error) => {
-            console.error("Error saving item:", error);
+        onError: () => {
             setSaveStatus('error');
             setStatusMessage("We couldn't save your item. Please check your connection.");
         }
@@ -165,15 +128,8 @@ export default function EachTable() {
             toast.success("Item updated successfully.");
             setIsEditModalOpen(false);
         },
-        onError: () => {
-            toast.error("Failed to update item.");
-        }
+        onError: () => toast.error("Failed to update item.")
     });
-
-    const handleEditItem = () => {
-        if (!editingItem) return;
-        editItemMutation.mutate();
-    };
 
     // Delete Item Mutation
     const deleteItemMutation = useMutation({
@@ -192,20 +148,42 @@ export default function EachTable() {
             toast.success("Item deleted successfully.");
             setIsDeleteModalOpen(false);
         },
-        onError: () => {
-            toast.error("Failed to delete the item.");
-        }
+        onError: () => toast.error("Failed to delete the item.")
     });
+
+    // Stock Update Mutation
+    const stockItemMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${stockItem._id}/stock`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ action: actionType, quantity: Number(quantity) })
+            });
+            if (!res.ok) throw new Error("Failed to update stock");
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['items', id] });
+            toast.success("Stock updated successfully.");
+            setIsStockModalOpen(false);
+        },
+        onError: () => toast.error("Failed to update stock.")
+    });
+
+    const handleEditItem = () => {
+        if (!editingItem) return;
+        editItemMutation.mutate();
+    };
 
     const handleDeleteItem = () => {
         if (!deletingItem) return;
         deleteItemMutation.mutate();
     };
 
+
     // --- EVENT HANDLERS FOR MODALS ---
     const openEditModal = (item: any) => {
         setEditingItem(item);
-
         const initialData: any = { name: item.name };
         const columnNames = tableData.attributes.map((attr: any) => attr.name);
         columnNames.forEach((attrName: string) => {
@@ -213,7 +191,6 @@ export default function EachTable() {
                 initialData[getDbKey(attrName)] = item[getDbKey(attrName)] || "";
             }
         });
-
         setEditFormData(initialData);
         setIsEditModalOpen(true);
     };
@@ -223,11 +200,18 @@ export default function EachTable() {
         setIsDeleteModalOpen(true);
     };
 
-    // Simplify loading states based on mutation status
+    const openStockModal = (item: any) => {
+        setStockItem(item);
+        setActionType("in");
+        setQuantity(1);
+        setIsStockModalOpen(true);
+    };
+
     const isEditing = editItemMutation.isPending;
     const isDeleting = deleteItemMutation.isPending;
+    const isUpdatingStock = stockItemMutation.isPending;
 
-    // --- LOADING SCREENS & EARLY RETURNS ---
+    // --- LOADING SCREENS ---
     if (isTableLoading || !tableData || !tableData.attributes || !Array.isArray(tableData.attributes)) {
         return (
             <div className="w-screen sm:p-10 p-2 space-y-4">
@@ -240,17 +224,19 @@ export default function EachTable() {
         )
     }
 
-    if (isItemsLoading || !rows) {
-        return <DataTableSkeleton />
-    }
+    if (isItemsLoading || !rows) return <DataTableSkeleton />
 
     // --- RENDER TABLE ---
     const columnNames = tableData?.attributes.map((attr: any) => attr.name) || [];
-    const columns = createColumns(columnNames, openEditModal, openDeleteModal);
+    const columns = createColumns(columnNames, openEditModal, openDeleteModal, openStockModal);
+
+    // --- REAL-TIME STOCK MATH ---
+    const currentStockVal = stockItem?.currentStock || 0;
+    const numQuantity = Number(quantity) || 0;
+    const projectedStock = actionType === "in" ? currentStockVal + numQuantity : currentStockVal - numQuantity;
 
     return (
         <>
-            {/* <Toaster richColors position="top-center" /> */}
             <div className="flex flex-col gap-y-4 w-full sm:p-10 p-2 overflow-hidden">
 
                 {/* Header */}
@@ -275,10 +261,6 @@ export default function EachTable() {
                             <span><AddItem tableData={tableData} onSave={handleSaveItem} /></span>
                         </span>
                     </div>
-
-                    <h5 className="flex items-center description text-neutral-400">
-                        Create a table first to manage your inventory.
-                    </h5>
                 </div>
 
                 {/* Data Table */}
@@ -286,9 +268,9 @@ export default function EachTable() {
                     <DataTable columns={columns} data={rows} />
                 </div>
 
-                {/* Status Dialog */}
+                {/* Status Dialog (Light Mode Update) */}
                 <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModelOpen}>
-                    <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
+                    <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-black">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                                 {saveStatus === 'loading' && <Loader2 className="h-5 w-5 animate-spin text-blue-500" />}
@@ -297,36 +279,34 @@ export default function EachTable() {
                                 {saveStatus === 'loading' ? "Processing..." : saveStatus === 'success' ? "Success!" : "Error"}
                             </DialogTitle>
                         </DialogHeader>
-
                         <div className="py-4">
-                            <p className="text-neutral-400 text-sm">{statusMessage}</p>
+                            <p className="text-gray-600 text-sm">{statusMessage}</p>
                         </div>
-
                         <DialogFooter>
                             {saveStatus !== 'loading' && (
-                                <Button onClick={() => setIsStatusModelOpen(false)} className="cursor-pointer">Close</Button>
+                                <Button onClick={() => setIsStatusModelOpen(false)} className="cursor-pointer bg-black text-white hover:bg-gray-800">Close</Button>
                             )}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
 
-                {/* Edit Item Modal */}
+                {/* Edit Item Modal (Light Mode Update) */}
                 <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                    <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
+                    <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-black">
                         <DialogHeader>
                             <DialogTitle>Edit Item</DialogTitle>
-                            <DialogDescription className="text-neutral-400">
+                            <DialogDescription className="text-gray-500">
                                 Update the details of your inventory item.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-neutral-400">Item Name</label>
+                                <label className="text-sm font-medium text-gray-700">Item Name</label>
                                 <Input
                                     value={editFormData.name || ""}
                                     onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                                    className="bg-neutral-800 border-neutral-700 text-white"
+                                    className="bg-white border-gray-300 text-black focus-visible:ring-gray-400"
                                 />
                             </div>
 
@@ -334,12 +314,12 @@ export default function EachTable() {
                                 const dbKey = getDbKey(attrName);
                                 return (
                                     <div key={dbKey} className="space-y-2">
-                                        <label className="text-sm font-medium text-neutral-400">{attrName}</label>
+                                        <label className="text-sm font-medium text-gray-700">{attrName}</label>
                                         <Input
                                             type={dbKey.includes("Stock") || dbKey === "volume" ? "number" : "text"}
                                             value={editFormData[dbKey] || ""}
                                             onChange={(e) => setEditFormData({ ...editFormData, [dbKey]: e.target.value })}
-                                            className="bg-neutral-800 border-neutral-700 text-white"
+                                            className="bg-white border-gray-300 text-black focus-visible:ring-gray-400"
                                         />
                                     </div>
                                 )
@@ -347,30 +327,137 @@ export default function EachTable() {
                         </div>
 
                         <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} disabled={isEditing}>Cancel</Button>
-                            <Button onClick={handleEditItem} disabled={isEditing || !editFormData.name?.trim()}>
+                            <Button variant="secondary" onClick={() => setIsEditModalOpen(false)} disabled={isEditing} className="bg-gray-200 text-black hover:bg-gray-300 cursor-pointer">Cancel</Button>
+                            <Button onClick={() => handleEditItem()} disabled={isEditing || !editFormData.name?.trim()} className="bg-black text-white hover:bg-gray-800">
                                 {isEditing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
 
-                {/* Delete Item Modal */}
+                {/* Delete Item Modal (Light Mode Update) */}
                 <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                    <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-red-900/50">
+                    <DialogContent className="sm:max-w-[425px] bg-white border-red-200 text-black">
                         <DialogHeader>
-                            <DialogTitle className="text-red-500 flex items-center gap-2">
+                            <DialogTitle className="text-red-600 flex items-center gap-2">
                                 <AlertCircle className="h-5 w-5" /> Confirm Deletion
                             </DialogTitle>
-                            <DialogDescription className="text-neutral-400 mt-2">
-                                Are you sure you want to delete <span className="text-white font-bold">{deletingItem?.name}</span>?
+                            <DialogDescription className="text-gray-600 mt-2">
+                                Are you sure you want to delete <span className="text-black font-bold">{deletingItem?.name}</span>?
                                 This action cannot be undone and will remove it from the table permanently.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="mt-4">
-                            <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting}>Cancel</Button>
-                            <Button variant="destructive" className="bg-red-600 hover:bg-red-700" onClick={handleDeleteItem} disabled={isDeleting}>
+                            <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting} className="bg-gray-200 text-black hover:bg-gray-300 cursor-pointer">Cancel</Button>
+                            <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDeleteItem()} disabled={isDeleting}>
                                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, delete item"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Stock In/Out Modal (Light Mode + Real-Time Preview) */}
+                <Dialog open={isStockModalOpen} onOpenChange={setIsStockModalOpen}>
+                    <DialogContent className="sm:max-w-[450px] bg-white border-gray-200 text-black">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold text-center">
+                                {stockItem?.name}
+                            </DialogTitle>
+                            <DialogDescription className="text-center text-gray-500 mt-1">
+                                Adjust the inventory levels for this item.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {/* Real-time Math Preview Box */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2 mb-2">
+                            <div className="flex justify-between items-center text-center">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">Current</span>
+                                    <span className="text-2xl font-bold text-gray-700">{currentStockVal}</span>
+                                </div>
+
+                                <div className="text-gray-400 px-2">
+                                    {actionType === "in" ? <Plus className="h-6 w-6 text-green-600" /> : <Minus className="h-6 w-6 text-red-600" />}
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">Quantity</span>
+                                    <span className="text-2xl font-bold text-gray-700">{numQuantity}</span>
+                                </div>
+
+                                <div className="text-gray-400 px-2">
+                                    <ArrowRight className="h-6 w-6" />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">New Stock</span>
+                                    <span className={`text-3xl font-bold ${projectedStock < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                                        {projectedStock}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-6 py-2">
+                            <div className="flex w-full rounded-md border border-gray-200 p-1 bg-gray-100">
+                                <button
+                                    onClick={() => setActionType("in")}
+                                    className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "in"
+                                        ? "bg-white text-black shadow-sm border border-gray-200"
+                                        : "text-gray-500 hover:text-black"
+                                        }`}
+                                >
+                                    Stock In
+                                </button>
+                                <button
+                                    onClick={() => setActionType("out")}
+                                    className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "out"
+                                        ? "bg-white text-black shadow-sm border border-gray-200"
+                                        : "text-gray-500 hover:text-black"
+                                        }`}
+                                >
+                                    Stock Out
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="text-sm font-semibold text-gray-700">Enter Quantity</span>
+                                <div className="flex items-center gap-3">
+                                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 border-gray-300 text-black hover:bg-gray-100 cursor-pointer" onClick={() => setQuantity(prev => Math.max(1, Number(prev) - 1))}>
+                                        <Minus className="h-4 w-4" />
+                                    </Button>
+
+                                    <Input
+                                        type="number"
+                                        value={quantity}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setQuantity(val === "" ? "" : parseInt(val, 10));
+                                        }}
+                                        onBlur={() => {
+                                            if (quantity === "" || Number(quantity) < 1 || isNaN(Number(quantity))) {
+                                                setQuantity(1);
+                                            }
+                                        }}
+                                        className="h-12 w-24 text-center text-xl font-bold border-gray-300 bg-white text-black focus-visible:ring-gray-400 shadow-sm"
+                                        min={1}
+                                    />
+
+                                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 border-gray-300 text-black hover:bg-gray-100 cursor-pointer" onClick={() => setQuantity(prev => Number(prev) + 1)}>
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="mt-2">
+                            <Button
+                                className="w-full bg-black text-white hover:bg-gray-800 cursor-pointer py-6 text-md font-semibold"
+                                onClick={() => stockItemMutation.mutate()}
+                                disabled={isUpdatingStock}
+                            >
+                                {isUpdatingStock ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                                {isUpdatingStock ? "Updating..." : "Confirm Update"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

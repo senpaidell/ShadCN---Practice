@@ -1,48 +1,43 @@
-// src/hooks/useLowStockItems.ts
+// hooks/useLowStockItems.ts
 import { useQuery } from "@tanstack/react-query";
-
-const API = "https://coshts-backend.vercel.app";
 
 export function useLowStockItems() {
     const token = localStorage.getItem("token");
 
-    // Fetch all tables
-    const { data: tables = [], isLoading: isTablesLoading } = useQuery<any[]>({
-        queryKey: ["tables-for-notification"],
+    // 1. Fetch tables first (to get the IDs needed for the items query)
+    const { data: tables = [] } = useQuery({
+        queryKey: ["tables-for-badge"],
         queryFn: async () => {
-            const res = await fetch(`${API}/api/tables`, {
+            const res = await fetch("https://coshts-backend.vercel.app/api/tables", {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error("Failed to fetch tables");
             return res.json();
         },
     });
 
     const tableIds = tables.map((t: any) => t._id).join(",");
 
-    // Fetch all items via dashboard endpoint
-    const { data: allItems = [], isLoading: isItemsLoading } = useQuery<any[]>({
-        queryKey: ["dashboard-items", tableIds],
+    // 2. Fetch items and apply the EXACT same filter as notification-page.tsx
+    const { data: lowStockItems = [], isLoading } = useQuery({
+        queryKey: ["low-stock-badge-count", tableIds],
         queryFn: async () => {
-            const res = await fetch(`${API}/api/items/dashboard?ids=${tableIds}`, {
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/dashboard?ids=${tableIds}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error("Failed to fetch items");
-            return res.json();
+            const allItems: any[] = await res.json();
+
+            return allItems.filter((item) => {
+                const percentage = item.parLevel > 0
+                    ? (item.currentStock / item.parLevel) * 100
+                    : 0;
+
+                // Match the Notification Page logic exactly:
+                return item.currentStock === 0 || percentage < 50;
+            });
         },
         enabled: tableIds.length > 0,
-        refetchInterval: 5000,
-        retry: false,
-        staleTime: 4000,
+        refetchInterval: 5000, // Keep it updated
     });
 
-    // Filter client-side — zero stock OR balance below threshold
-    const lowStockItems = allItems
-        .filter((item) => item.inStock === 0 || item.balance < 50)
-        .sort((a, b) => a.inStock - b.inStock || a.balance - b.balance);
-
-    return {
-        lowStockItems,
-        isLoading: isTablesLoading || isItemsLoading,
-    };
+    return { lowStockItems, isLoading };
 }
