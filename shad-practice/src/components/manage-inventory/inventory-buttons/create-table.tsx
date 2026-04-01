@@ -18,6 +18,7 @@ import { Form } from "@/components/ui/form";
 
 const tableOptions = [
   { id: 1, name: "Name", type: "string" },
+  { id: 6, name: "Category", type: "string" }, // Added
   { id: 2, name: "Volume", type: "number" },
   { id: 3, name: "Current Stock", type: "number" },
   { id: 4, name: "Par Level", type: "number" },
