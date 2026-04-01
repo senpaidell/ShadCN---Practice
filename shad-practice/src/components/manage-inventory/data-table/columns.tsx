@@ -16,30 +16,33 @@ export const createColumns = (
 ): ColumnDef<any>[] => {
 
     const baseColumns: ColumnDef<any>[] = [
-        {
-            id: "rowNumber",
-            header: () => (<div className="text-center">#</div>),
-            cell: ({ row }) => <div className="text-center text-muted-foreground">{row.index + 1}</div>,
-            enableSorting: false,
-        },
-        {
-            accessorKey: "name",
-            header: "Item Name",
-        },
+        { id: "rowNumber", header: () => (<div className="text-center">#</div>), cell: ({ row }) => <div className="text-center text-muted-foreground">{row.index + 1}</div> },
+        { accessorKey: "name", header: "Item Name" },
+        { accessorKey: "category", header: "Category" }, // Added Category Column
     ]
 
     const dynamicColumns = attributes
         .filter((attr: any) => {
             const attrName = typeof attr === 'string' ? attr : attr.name;
-            return attrName !== "Name";
+            return !["Name", "Category"].includes(attrName); // Filtered Name and Category
         })
         .map((attr: any) => {
             const attrName = typeof attr === 'string' ? attr : attr.name;
+            const dbKey = getDbKey(attrName);
 
             return {
-                accessorKey: getDbKey(attrName),
+                accessorKey: dbKey,
                 header: attrName,
-                cell: ({ getValue }: any) => getValue() ?? "-",
+                cell: ({ row }: any) => {
+                    const val = row.original[dbKey];
+                    if (attrName === "Volume" && val) {
+                        return `${val} ${row.original.volumeUnit || ""}`; // Shows "500 mL"
+                    }
+                    if (attrName === "Expiration" && val) {
+                        return new Date(val).toLocaleDateString();
+                    }
+                    return val ?? "-";
+                },
             };
         })
 

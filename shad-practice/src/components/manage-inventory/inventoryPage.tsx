@@ -326,7 +326,7 @@ export function InventoryPage() {
 
             {/* EDIT MODAL */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
+                <DialogContent className="sm:max-w-[425px] bg-neutral-100 border-neutral-800">
                     <DialogHeader>
                         <DialogTitle>Rename Table</DialogTitle>
                         <DialogDescription className="text-neutral-400">
@@ -337,7 +337,7 @@ export function InventoryPage() {
                         <Input
                             value={newTableName}
                             onChange={(e) => setNewTableName(e.target.value)}
-                            className="bg-neutral-800 border-neutral-700 text-white"
+                            className="bg-neutral-200 border-neutral-700 text-black"
                             placeholder="Table Name"
                         />
                     </div>
@@ -352,19 +352,19 @@ export function InventoryPage() {
 
             {/* DELETE MODAL */}
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-red-900/50">
+                <DialogContent className="sm:max-w-[425px] bg-neutral-200 border-red-900/50">
                     <DialogHeader>
                         <DialogTitle className="text-red-500 flex items-center gap-2">
                             <AlertCircle className="h-5 w-5" /> Confirm Deletion
                         </DialogTitle>
-                        <DialogDescription className="text-neutral-400">
-                            Are you absolutely sure you want to delete <span className="text-white font-bold">{deletingTable?.name}</span>?
+                        <DialogDescription className="text-neutral-800">
+                            Are you absolutely sure you want to delete <span className="text-black font-bold">{deletingTable?.name}</span>?
                             This action cannot be undone. <span className="text-red-400">All inventory items inside this table will be permanently deleted.</span>
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 mt-4 flex justify-end gap-2">
                         <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} disabled={deleteMutation.isPending}>Cancel</Button>
-                        <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteTable} disabled={deleteMutation.isPending}>
+                        <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-black" onClick={handleDeleteTable} disabled={deleteMutation.isPending}>
                             {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, delete table"}
                         </Button>
                     </div>

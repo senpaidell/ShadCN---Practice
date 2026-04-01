@@ -18,12 +18,14 @@ import { AuthRequest } from "../middleware/authMiddleware";
 
 export const addItemToTable = async (req: AuthRequest, res: Response) => {
     try {
-        const { tableId, name, volume, currentStock, parLevel, expiration } = req.body;
+        const { tableId, name, category, volume, volumeUnit, currentStock, parLevel, expiration } = req.body;
 
         const itemData: any = {
             tableId,
             name,
+            category,
             volume: Number(volume) || 0,
+            volumeUnit,
             currentStock: Number(currentStock) || 0,
             parLevel: Number(parLevel) || 0,
             user: req.user.id
@@ -81,11 +83,13 @@ export const getDashboardItems = async (req: AuthRequest, res: Response) => {
 export const updateItem = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, volume, currentStock, parLevel, expiration } = req.body;
+        const { name, category, volume, volumeUnit, currentStock, parLevel, expiration } = req.body;
 
         const updateData: any = {
             name,
+            category,
             volume: Number(volume) || 0,
+            volumeUnit,
             currentStock: Number(currentStock) || 0,
             parLevel: Number(parLevel) || 0,
         };

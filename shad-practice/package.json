@@ -70,6 +70,7 @@
     "tailwindcss": "^4.1.18",
     "uuid": "^13.0.0",
     "vaul": "^1.1.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
     "zod": "^3.22.4"
   },
   "devDependencies": {
