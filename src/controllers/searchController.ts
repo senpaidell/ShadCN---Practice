@@ -31,7 +31,7 @@ export const globalSearch = async (req: AuthRequest, res: Response) => {
                     model: 'InventoryTable',
                     select: 'name'
                 }
-            ).select('name tableId inStock')
+            ).select('name tableId currentStock')
         ]);
 
         res.status(200).json({ tables, items });

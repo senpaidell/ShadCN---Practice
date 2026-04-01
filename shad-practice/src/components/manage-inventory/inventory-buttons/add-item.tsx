@@ -129,7 +129,7 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline" className="cursor-pointer" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button variant="secondary" className="bg-gray-200 text-black hover:bg-gray-300 cursor-pointer" onClick={() => setOpen(false)}>Cancel</Button>
               </DialogClose>
               <Button type="submit" className="cursor-pointer" disabled={!name.trim()}>Save changes</Button>
             </DialogFooter>

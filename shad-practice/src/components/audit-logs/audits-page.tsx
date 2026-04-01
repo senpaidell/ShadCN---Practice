@@ -169,12 +169,15 @@ export default function AuditLogsPage() {
                 </span>
               </div>
 
-              <span className="md:ml-auto text-neutral-600 text-sm mt-2 md:mt-0 shrink-0">
-                {new Date(log.createdAt).toLocaleDateString(undefined, {
+              <span className="md:ml-auto text-neutral-600 text-sm mt-2 md:mt-0 shrink-0 text-right">
+                {new Date(log.createdAt).toLocaleString(undefined, {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
-                  year: 'numeric'
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
                 })}
               </span>
             </div>

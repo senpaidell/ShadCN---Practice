@@ -172,11 +172,10 @@ export function HomePage() {
     });
 
     const tilesRemaining = Array.isArray(tileItems) ? tileItems.filter((item) => item.itemId !== null).map((item) => {
-        const inStock = item.itemId.inStock || 0;
-        const newStock = item.itemId.newStock || 0;
-        const totalStock = inStock + newStock;
+        const inStock = item.itemId.currentStock;
+        const parLevel = item.itemId.parLevel;
 
-        const percentage = totalStock > 0 ? Math.round((inStock / totalStock) * 100) : 0;
+        const percentage = Math.round((inStock / parLevel) * 100)
         return {
             id: item._id,
             name: item.itemId?.name,
