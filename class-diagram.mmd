@@ -1,0 +1,99 @@
+classDiagram
+    %% Core Entities (Models + Controllers)
+    
+    class User {
+        +String firstName
+        +String lastName
+        +String email
+        -String password
+        +Boolean isVerified
+        +String otp
+        +Date otpExpires
+        +signupUser(req, res)
+        +verifySignup(req, res)
+        +loginUser(req, res)
+        +forgotPassword(req, res)
+        +resetPassword(req, res)
+        +getUsers(req, res)
+    }
+
+    class InventoryTable {
+        +ObjectId user
+        +String name
+        +Array attributes
+        +createInventoryTable(req, res)
+        +getInventoryTable(req, res)
+        +getInventoryTableById(req, res)
+        +updateInventoryTable(req, res)
+        +deleteInventoryTable(req, res)
+    }
+
+    class Item {
+        +ObjectId tableId
+        +ObjectId user
+        +String name
+        +String category
+        +Number volume
+        +String volumeUnit
+        +Number currentStock
+        +Number parLevel
+        +Date expiration
+        +addItemToTable(req, res)
+        +getItemsByTable(req, res)
+        +getDashboardItems(req, res)
+        +updateItem(req, res)
+        +deleteItem(req, res)
+        +getReportData(req, res)
+        +updateItemStock(req, res)
+    }
+
+    class AuditLog {
+        +ObjectId user
+        +String targetName
+        +String tableName
+        +String activity
+        +createAuditLog(req, res)
+        +getAuditLogs(req, res)
+    }
+
+    class tileItem {
+        +ObjectId itemId
+        +ObjectId tableId
+        +ObjectId user
+        +createTileItem(req, res)
+        +getTileItem(req, res)
+        +deleteTileItem(req, res)
+    }
+
+    class DashboardTile {
+        +String userId
+        +ObjectId tableId
+    }
+
+    %% Standalone / Utility Controllers
+    class SearchService {
+        <<Service>>
+        +globalSearch(req, res)
+    }
+
+    class Student {
+        <<Sample>>
+        +createStudent(req, res)
+        +getStudents(req, res)
+    }
+
+    %% Relationships mapping your system architecture
+    User "1" --> "*" InventoryTable : owns
+    User "1" --> "*" Item : creates
+    User "1" --> "*" tileItem : owns
+    User "1" --> "*" AuditLog : triggers
+    
+    InventoryTable "1" --> "*" Item : contains
+    InventoryTable "1" --> "*" DashboardTile : displayed on
+    InventoryTable "1" --> "*" tileItem : referenced in
+    
+    Item "1" --> "*" tileItem : linked to
+    
+    %% Service Dependencies
+    SearchService ..> InventoryTable : queries
+    SearchService ..> Item : queries

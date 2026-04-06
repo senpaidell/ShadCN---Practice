@@ -148,11 +148,12 @@ function TableGroup({ table }: { table: InventoryTable }) {
                                 <CarouselItem key={item._id} className="pl-2 basis-auto">
                                     <button
                                         onClick={() => openModal(item)}
-                                        className="flex flex-col hover:brightness-125 transition-all cursor-pointer h-[12vh] w-[12vh] shrink-0 border-1 flex justify-center items-center border-neutral-800 rounded-[0.625rem] bg-neutral-300 text-black"
+                                        className={`flex flex-col hover:brightness-125 transition-all cursor-pointer h-[12vh] w-[12vh] shrink-0 border-1 flex justify-center items-center ${(Math.round((item.currentStock / item.parLevel) * 100)) >= 50 && (Math.round((item.currentStock / item.parLevel) * 100)) <= 100 ? "bg-linear-to-t from-emerald-400 to-emerald-800" : (Math.round((item.currentStock / item.parLevel) * 100)) > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700"} border-neutral-800 rounded-[0.625rem] text-black`}
                                     >
-                                        <div><Image size={32} /></div>
-                                        <div className="mt-2 text-sm font-semibold text-center px-1 truncate w-full">
+                                        <div className="text-neutral-300"><Image size={32} /></div>
+                                        <div className="mt-2 text-sm text-neutral-100 font-semibold text-center px-1 truncate w-full">
                                             {item.name}
+                                            <div>( {item.currentStock} / {item.parLevel} )</div>
                                         </div>
                                     </button>
                                 </CarouselItem>
@@ -334,7 +335,7 @@ export function QuickMode() {
                 </Link>
             </div>
 
-            <div className="flex w-full">
+            {/* <div className="flex w-full">
                 <Tabs defaultValue="Stock Out" className="sm:ml-auto sm:w-96 w-full">
                     <TabsList className="w-full">
                         <TabsTrigger value="Stock In" className="cursor-pointer hover:brightness-125" onClick={() => setPageTitle("In")}>
@@ -345,7 +346,7 @@ export function QuickMode() {
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
-            </div>
+            </div> */}
 
             <div className="min-h-[64vh] flex flex-col justify-between">
                 <div className="flex flex-col gap-y-4 w-full">

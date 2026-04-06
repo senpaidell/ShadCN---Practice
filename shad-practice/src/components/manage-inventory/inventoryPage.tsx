@@ -304,7 +304,7 @@ export function InventoryPage() {
 
             {/* Existing Create Status Dialog */}
             <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
-                <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
+                <DialogContent className="sm:max-w-[425px] bg-white">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             {saveStatus === 'loading' && <Loader2 className="h-5 w-5 animate-spin text-blue-500" />}
@@ -314,7 +314,7 @@ export function InventoryPage() {
                         </DialogTitle>
                     </DialogHeader>
                     <div className="py-4">
-                        <p className="text-neutral-400 text-sm">{statusMessage}</p>
+                        <p className="text-neutral-900 text-sm">{statusMessage}</p>
                     </div>
                     <DialogFooter>
                         {saveStatus !== 'loading' && (
@@ -365,7 +365,7 @@ export function InventoryPage() {
                     <div className="py-4 mt-4 flex justify-end gap-2">
                         <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)} disabled={deleteMutation.isPending}>Cancel</Button>
                         <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-black" onClick={handleDeleteTable} disabled={deleteMutation.isPending}>
-                            {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, delete table"}
+                            {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (<span className="text-white">Yes, delete table</span>)}
                         </Button>
                     </div>
                 </DialogContent>

@@ -1,0 +1,75 @@
+erDiagram
+    %% Relationships mapping your 'ref' properties
+    User ||--o{ InventoryTable : "owns"
+    User ||--o{ Item : "creates"
+    User ||--o{ tileItem : "owns"
+    User ||--o{ AuditLog : "triggers"
+    
+    InventoryTable ||--o{ Item : "contains"
+    InventoryTable ||--o{ DashboardTile : "displayed on"
+    InventoryTable ||--o{ tileItem : "referenced in"
+    
+    Item ||--o{ tileItem : "linked to"
+
+    %% Schemas and their properties
+    User {
+        ObjectId _id
+        String firstName
+        String lastName
+        String email
+        String password
+        Boolean isVerified
+        String otp
+        Date otpExpires
+        Date createdAt
+        Date updatedAt
+    }
+
+    InventoryTable {
+        ObjectId _id
+        ObjectId user FK "ref: User"
+        String name
+        Array attributes "Subdocument: name, dataType"
+        Date createdAt
+        Date updatedAt
+    }
+
+    Item {
+        ObjectId _id
+        ObjectId tableId FK "ref: InventoryTable"
+        ObjectId user FK "ref: User"
+        String name
+        String category
+        Number volume
+        String volumeUnit
+        Number currentStock
+        Number parLevel
+        Date expiration
+        Date createdAt
+        Date updatedAt
+    }
+
+    DashboardTile {
+        ObjectId _id
+        String userId "⚠️ Stored as String, not ref"
+        ObjectId tableId FK "ref: InventoryTable"
+    }
+
+    tileItem {
+        ObjectId _id
+        ObjectId itemId FK "ref: Item"
+        ObjectId tableId FK "ref: InventoryTable"
+        ObjectId user FK "ref: User"
+        Date createdAt
+        Date updatedAt
+    }
+
+    AuditLog {
+        ObjectId _id
+        ObjectId user FK "ref: User"
+        String targetName
+        String tableName
+        String activity
+        Date createdAt
+        Date updatedAt
+    }

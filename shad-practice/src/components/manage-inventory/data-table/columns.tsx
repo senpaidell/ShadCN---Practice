@@ -58,7 +58,7 @@ export const createColumns = (
             let colorClass = "text-green-500 bg-green-500/10 border-green-500/20";
             let label = "Good";
 
-            if (percentage < 30) {
+            if (percentage < 50) {
                 colorClass = "text-red-500 bg-red-500/10 border-red-500/20";
                 label = "Low";
             } else if (percentage > 110) {

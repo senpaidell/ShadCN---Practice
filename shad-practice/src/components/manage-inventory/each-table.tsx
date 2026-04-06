@@ -82,7 +82,10 @@ export default function EachTable() {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(itemData),
             });
-            if (!res.ok) throw new Error("Failed to save item");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to save item");
+            }
             return res.json();
         },
         onMutate: () => {
@@ -95,9 +98,10 @@ export default function EachTable() {
             setSaveStatus('success');
             setStatusMessage('Item has been added successfully.');
         },
-        onError: () => {
+        // NEW: Display the actual error message
+        onError: (error: Error) => {
             setSaveStatus('error');
-            setStatusMessage("We couldn't save your item. Please check your connection.");
+            setStatusMessage(error.message);
         }
     });
 
@@ -258,7 +262,7 @@ export default function EachTable() {
                         </span>
                         <span className="ml-auto flex flex-row gap-x-2">
                             <span><FilterItem /></span>
-                            <span><AddItem tableData={tableData} onSave={handleSaveItem} /></span>
+                            <span><AddItem tableData={tableData} existingItems={rows} onSave={handleSaveItem} /></span>
                         </span>
                     </div>
                 </div>

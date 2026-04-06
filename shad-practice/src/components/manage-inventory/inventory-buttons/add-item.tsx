@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const CATEGORIES = ["Flour", "Baking Soda", "Eggs", "Fat", "Sugar", "Flavoring", "Chocolate", "Custom"];
 const DEFAULT_UNITS = ["L", "mL", "g", "kg", "oz", "lbs"];
 
-export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) {
+// Notice we added existingItems to the props
+export function AddItem({ tableData, existingItems, onSave }: { tableData: any, existingItems: any[], onSave: any }) {
   const attributes = tableData?.attributes || []
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -17,6 +18,10 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
   const [volumeUnit, setVolumeUnit] = useState("mL");
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
+
+  // New States for our toggle and validation
+  const [preventDuplicate, setPreventDuplicate] = useState(true);
+  const [nameError, setNameError] = useState("");
 
   const { mutate: logAudit } = useLogAudit();
 
@@ -26,23 +31,37 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNameError(""); // Reset error on submit
+
+    // 1. Frontend Pre-flight Check
+    if (preventDuplicate) {
+      const isDuplicate = existingItems.some(
+        (item: any) => item.name.toLowerCase().trim() === name.toLowerCase().trim()
+      );
+      if (isDuplicate) {
+        setNameError("An item with this name already exists in this table.");
+        return; // Stop the submission
+      }
+    }
+
     const finalCategory = category === "Custom" ? customCategory : category;
 
     const itemData = {
       tableId: tableData._id,
-      name: name,
+      name: name.trim(), // Trim whitespace to keep db clean
       category: finalCategory,
       volumeUnit: volumeUnit,
       currentStock: Number(dynamicValues["Current Stock"]) || 0,
       parLevel: Number(dynamicValues["Par Level"]) || 0,
       volume: Number(dynamicValues["Volume"]) || 0,
-      expiration: dynamicValues["Expiration"] || undefined
+      expiration: dynamicValues["Expiration"] || undefined,
+      preventDuplicate // Send this to the backend as a final security measure
     }
 
     const success = await onSave(itemData);
     if (success) {
       logAudit({ targetName: name, tableName: tableData.name, activity: "New Item" });
-      setName(""); setCategory(""); setCustomCategory(""); setDynamicValues({}); setOpen(false);
+      setName(""); setCategory(""); setCustomCategory(""); setDynamicValues({}); setNameError(""); setOpen(false);
     }
   }
 
@@ -60,7 +79,32 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
             {/* Item Name */}
             <div className="flex flex-col gap-y-2">
               <Label htmlFor="item-name">Item Name</Label>
-              <Input id="item-name" className="h-12" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter item name" required />
+              <Input
+                id="item-name"
+                className={`h-12 ${nameError ? "border-red-500" : ""}`}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError(""); // Clear error when typing
+                }}
+                placeholder="Enter item name"
+                required
+              />
+              {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
+            </div>
+
+            {/* Prevent Duplicate Toggle */}
+            <div className="flex items-center space-x-2 py-1">
+              <input
+                type="checkbox"
+                id="prevent-duplicate"
+                checked={preventDuplicate}
+                onChange={(e) => setPreventDuplicate(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+              />
+              <Label htmlFor="prevent-duplicate" className="text-sm text-gray-600 cursor-pointer">
+                Prevent duplicate item names
+              </Label>
             </div>
 
             {/* Category Dropdown */}
@@ -110,8 +154,8 @@ export function AddItem({ tableData, onSave }: { tableData: any, onSave: any }) 
           </div>
 
           <DialogFooter>
-            <DialogClose asChild><Button variant="secondary" className="bg-gray-200 text-black hover:bg-gray-300" onClick={() => setOpen(false)}>Cancel</Button></DialogClose>
-            <Button type="submit" disabled={!name.trim()}>Save changes</Button>
+            <DialogClose asChild><Button variant="secondary" className="bg-gray-200 text-black hover:bg-gray-300 cursor-pointer" onClick={() => setOpen(false)}>Cancel</Button></DialogClose>
+            <Button type="submit" disabled={!name.trim()} className="cursor-pointer">Save changes</Button>
           </DialogFooter>
         </form>
       </DialogContent>
