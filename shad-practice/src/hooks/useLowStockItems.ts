@@ -31,12 +31,12 @@ export function useLowStockItems() {
                     ? (item.currentStock / item.parLevel) * 100
                     : 0;
 
-                // Match the Notification Page logic exactly:
+
                 return item.currentStock === 0 || percentage < 50;
             });
         },
         enabled: tableIds.length > 0,
-        refetchInterval: 5000, // Keep it updated
+        refetchInterval: 5000,
     });
 
     return { lowStockItems, isLoading };

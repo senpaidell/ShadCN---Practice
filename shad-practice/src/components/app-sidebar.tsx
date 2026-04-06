@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom";
 import logo from "@/assets/cosh-anniv-logo.png";
+import DP4 from "@/assets/transparent-logo.png"
 import { LogOut } from "./login/logout";
 
 const items = [
@@ -45,13 +46,13 @@ export function AppSidebar() {
                 <SidebarContent>
                     <SidebarGroup>
                         <div className="flex justify-center">
-                            <img src={logo} className="h-36" />
+                            <img src={DP4} className="h-36" />
                         </div>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {items.map((item) => (
                                     <SidebarMenuItem key={item.title} className="">
-                                        <SidebarMenuButton asChild>
+                                        <SidebarMenuButton asChild className="">
                                             <Link to={item.url} onClick={() => {
                                                 if (isMobile) {
                                                     setOpenMobile(false);

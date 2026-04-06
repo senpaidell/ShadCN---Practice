@@ -171,18 +171,22 @@ export function HomePage() {
         }
     });
 
-    const tilesRemaining = Array.isArray(tileItems) ? tileItems.filter((item) => item.itemId !== null).map((item) => {
-        const inStock = item.itemId.currentStock;
-        const parLevel = item.itemId.parLevel;
+    const tilesRemaining = Array.isArray(tileItems) ? tileItems
+        .filter((item) => item.itemId !== null)
+        // Sort items by createdAt descending (newest first) before mapping
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map((item) => {
+            const inStock = item.itemId.currentStock;
+            const parLevel = item.itemId.parLevel;
 
-        const percentage = Math.round((inStock / parLevel) * 100)
-        return {
-            id: item._id,
-            name: item.itemId?.name,
-            percentage: percentage,
-            table: item.tableId?.name
-        }
-    }) : [];
+            const percentage = Math.round((inStock / parLevel) * 100)
+            return {
+                id: item._id,
+                name: item.itemId?.name,
+                percentage: percentage,
+                table: item.tableId?.name
+            }
+        }) : [];
 
     return (
         <>
@@ -223,19 +227,12 @@ export function HomePage() {
                                                 <Skeleton className="h-64 w-full rounded-[0.625rem] bg-neutral-800" />
                                             </CarouselItem>
                                         ))
-                                    ) : tilesRemaining.length === 0 ? (
-                                        Array.from({ length: 4 }).map((_, index) => (
-                                            <CarouselItem key={`empty-${index}`} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
-                                                <div className="flex items-center justify-center h-64 w-full rounded-[0.625rem] border-2 border-dashed border-neutral-700 bg-neutral-800/30">
-                                                    <span className="text-neutral-500 font-medium">No tiles added yet</span>
-                                                </div>
-                                            </CarouselItem>
-                                        ))
                                     ) : (
                                         <>
+                                            {/* Render the actual populated tiles (Now sorted newest first) */}
                                             {tilesRemaining.map((items) => (
                                                 <CarouselItem key={items.id} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
-                                                    <div className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out relative border-white/10 border-1 h-64 w-full rounded-[0.625rem] ${items.percentage >= 50 ? "bg-linear-to-t from-sky-500 to-indigo-500" : "bg-linear-65 from-purple-500 to-pink-500"}`}>
+                                                    <div className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out relative h-64 w-full rounded-[0.625rem] ${items.percentage >= 50 && items.percentage <= 100 ? "bg-linear-to-t from-emerald-400 to-emerald-800" : (items.percentage > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700")}`}>
 
                                                         <button onClick={(e) => {
                                                             e.stopPropagation();
@@ -247,14 +244,25 @@ export function HomePage() {
                                                         <span className="p-4 absolute top-0 left-0 text-sm font-semibold text-neutral-200">
                                                             <span className="text-neutral-400">Table: </span>{items.table}
                                                         </span>
-                                                        <span className={`p-4 absolute bottom-0 left-0 ${items.name?.length > 8 ? 'text-sm' : 'text-xl'} font-bold text-neutral-200`}>
+                                                        <span className={`p-4 absolute bottom-0 left-0 ${items.name?.length > 8 ? 'text-sm' : 'text-xl'} font-bold text-neutral-100`}>
                                                             {items.name}
                                                         </span>
                                                         <span className="p-4 absolute bottom-8 left-0 text-5xl font-bold text-neutral-200">
                                                             {items.percentage}%
                                                         </span>
                                                         <span className={`p-4 absolute bottom-0 right-0 text-3xl font-bold text-neutral-200`}>
-                                                            {items.percentage >= 50 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-green-600 text-green-600">Good</span>) : (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-red-600 text-red-600">Restock Now!</span>)}
+                                                            {items.percentage >= 50 && items.percentage <= 100 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-green-600 text-green-600">Good</span>) : (items.percentage > 100 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-blue-600 text-blue-400">Over Stocked!</span>) : (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-red-600 text-red-600">Restock Now!</span>))}
+                                                        </span>
+                                                    </div>
+                                                </CarouselItem>
+                                            ))}
+
+                                            {/* Render empty placeholders for the remaining slots up to 10 */}
+                                            {Array.from({ length: Math.max(0, 10 - tilesRemaining.length) }).map((_, index) => (
+                                                <CarouselItem key={`empty-${index}`} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
+                                                    <div className="flex items-center justify-center h-64 w-full rounded-[0.625rem] border-2 border-dashed border-neutral-700 bg-neutral-800/30">
+                                                        <span className="text-neutral-500 font-medium">
+                                                            {tilesRemaining.length === 0 ? "No tiles added yet" : "Available slot"}
                                                         </span>
                                                     </div>
                                                 </CarouselItem>

@@ -40,9 +40,9 @@ export function LogOut() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleLogOut}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive text-white hover:bg-destructive/90"
           >
             Log Out
           </AlertDialogAction>

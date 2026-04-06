@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../ui/chart"
 import { useQuery } from "@tanstack/react-query";
 import EditIcon from '@mui/icons-material/Edit';
-import { TrendingDown, CheckCircle2 } from "lucide-react";
+import { TrendingDown, CheckCircle2, Info } from "lucide-react";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import {
@@ -23,8 +23,10 @@ export const description = "A bar chart showing Current Stock vs Par Level"
 export function ToolTipCosh() {
     const [open, setOpen] = useState(false);
 
+    // FIX: Ensure we don't accidentally load the string "null" from local storage
     const [selectedTableId, setSelectedTableId] = useState<string | null>(() => {
-        return localStorage.getItem("preferredBarChartTable") || null;
+        const saved = localStorage.getItem("preferredBarChartTable");
+        return saved && saved !== "null" ? saved : null;
     });
 
     const [tempTableId, setTempTableId] = useState<string | null>(null);
@@ -96,8 +98,6 @@ export function ToolTipCosh() {
         currentStock: { label: "Current Stock", color: "#3b82f6" },
     } satisfies ChartConfig;
 
-    const currentTableName = tables?.find((t: any) => t._id === selectedTableId)?.name || "Loading...";
-
     const handleSaveChanges = () => {
         if (tempTableId) {
             setSelectedTableId(tempTableId);
@@ -106,18 +106,34 @@ export function ToolTipCosh() {
         setOpen(false);
     };
 
-    // Determine dynamic description for the bar chart
+    // FIX: Safely check if the selected table actually exists in the database
+    const currentTable = tables?.find((t: any) => t._id === selectedTableId);
+    const currentTableName = isTablesLoading ? "Loading..." : (currentTable?.name || "None Selected");
+
+    // FIX: Bulletproof logic for the bottom status text
     let StatusIcon = CheckCircle2;
     let iconColor = "text-green-500";
     let statusText = "No critical restock needs at the moment.";
 
-    if (chartData.length > 0) {
+    if (isTablesLoading) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "Loading table data...";
+    } else if (!currentTable) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "No tables selected yet.";
+    } else if (chartData.length > 0) {
         const worstOffender = chartData[0];
         if (worstOffender.percent < 100) {
             StatusIcon = TrendingDown;
             iconColor = "text-red-500";
             statusText = `Action needed: ${worstOffender.item} is at ${Math.round(worstOffender.percent)}% of par goal.`;
         }
+    } else if (!tableItems || tableItems.length === 0) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "No items found in this table.";
     }
 
     return (
@@ -141,7 +157,6 @@ export function ToolTipCosh() {
                             <EditIcon fontSize="small" />
                         </Button>
                     </DialogTrigger>
-                    {/* ... (Keep existing DialogContent identical to previous code) ... */}
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Select Table Source</DialogTitle>
@@ -190,11 +205,15 @@ export function ToolTipCosh() {
             </CardHeader>
 
             <CardContent className="flex-1 pb-4 mt-8">
-                {isLoading ? (
+                {isLoading || isTablesLoading ? (
                     <div className="h-[200px] w-full flex items-end gap-2">
                         {[...Array(5)].map((_, i) => (
                             <Skeleton key={i} className="w-full bg-neutral-800" style={{ height: `${Math.random() * 80 + 20}%` }} />
                         ))}
+                    </div>
+                ) : !currentTable ? (
+                    <div className="h-full flex flex-col items-center justify-center text-neutral-500 text-sm">
+                        Please select a table to view data.
                     </div>
                 ) : chartData.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-neutral-500 text-sm">
@@ -215,7 +234,6 @@ export function ToolTipCosh() {
                 )}
             </CardContent>
 
-            {/* NEW FOOTER WITH DYNAMIC DESCRIPTION */}
             <CardFooter className="flex-col gap-2 text-sm text-center border-t border-white/5 pt-4">
                 <div className="flex items-center gap-2 font-medium leading-none">
                     <StatusIcon className={`w-4 h-4 ${iconColor}`} />

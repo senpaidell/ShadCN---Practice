@@ -23,8 +23,10 @@ export const description = "A dynamic pie chart showing inventory health";
 export function PieChartComponent() {
     const [open, setOpen] = useState(false);
 
+    // FIX: Ensure we don't accidentally load the string "null" from local storage
     const [selectedTableId, setSelectedTableId] = useState<string | null>(() => {
-        return localStorage.getItem("preferredPieChartTable") || null;
+        const saved = localStorage.getItem("preferredPieChartTable");
+        return saved && saved !== "null" ? saved : null;
     });
 
     const [tempTableId, setTempTableId] = useState<string | null>(null);
@@ -70,7 +72,6 @@ export function PieChartComponent() {
         enabled: !!selectedTableId
     });
 
-    // Transform data and capture stats for the footer description
     const { chartData, stats } = useMemo(() => {
         let outOfStock = 0;
         let critical = 0;
@@ -117,8 +118,6 @@ export function PieChartComponent() {
         } satisfies ChartConfig;
     }, []);
 
-    const currentTableName = tables?.find((t: any) => t._id === selectedTableId)?.name || "Loading...";
-
     const handleSaveChanges = () => {
         if (tempTableId) {
             setSelectedTableId(tempTableId);
@@ -127,12 +126,24 @@ export function PieChartComponent() {
         setOpen(false);
     };
 
-    // Determine the dynamic description based on the stats
+    // FIX: Safely check if the selected table actually exists in the database
+    const currentTable = tables?.find((t: any) => t._id === selectedTableId);
+    const currentTableName = isTablesLoading ? "Loading..." : (currentTable?.name || "None Selected");
+
+    // FIX: Bulletproof logic for the bottom status text
     let StatusIcon = CheckCircle2;
     let iconColor = "text-green-500";
     let statusText = "All items are at healthy stock levels.";
 
-    if (stats.outOfStock > 0) {
+    if (isTablesLoading) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "Loading table data...";
+    } else if (!currentTable) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "No tables selected yet.";
+    } else if (stats.outOfStock > 0) {
         StatusIcon = AlertCircle;
         iconColor = "text-red-500";
         statusText = `Attention: ${stats.outOfStock} item(s) are completely out of stock.`;
@@ -144,6 +155,10 @@ export function PieChartComponent() {
         StatusIcon = Info;
         iconColor = "text-yellow-500";
         statusText = `${stats.runningLow} item(s) are running below par level.`;
+    } else if (!tableItems || tableItems.length === 0) {
+        StatusIcon = Info;
+        iconColor = "text-neutral-500";
+        statusText = "No items found in this table.";
     }
 
     return (
@@ -167,7 +182,6 @@ export function PieChartComponent() {
                             <EditIcon fontSize="small" />
                         </Button>
                     </DialogTrigger>
-                    {/* ... (Keep existing DialogContent identical to previous code) ... */}
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Select Table Source</DialogTitle>
@@ -216,9 +230,13 @@ export function PieChartComponent() {
             </CardHeader>
 
             <CardContent className="flex-1 pb-4 mt-4">
-                {isLoading ? (
+                {isLoading || isTablesLoading ? (
                     <div className="h-full flex items-center justify-center">
                         <Skeleton className="h-[200px] w-[200px] rounded-full bg-neutral-800" />
+                    </div>
+                ) : !currentTable ? (
+                    <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+                        Please select a table to view data.
                     </div>
                 ) : chartData.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
@@ -238,7 +256,6 @@ export function PieChartComponent() {
                 )}
             </CardContent>
 
-            {/* NEW FOOTER WITH DYNAMIC DESCRIPTION */}
             <CardFooter className="flex-col gap-2 text-sm text-center border-t border-white/5 pt-4">
                 <div className="flex items-center gap-2 font-medium leading-none">
                     <StatusIcon className={`w-4 h-4 ${iconColor}`} />

@@ -29,16 +29,16 @@ function NotificationCard({ number, item }: { number: string; item: any }) {
 
   return (
     // Updated href to "to" for React Router
-    <Link to={`/tables/${item.tableId}`} className="block">
-      <div className="flex items-center justify-between p-4 mb-2 border border-white/10 rounded-[0.625rem] bg-neutral-900 hover:brightness-125 hover:border-white/30 transition duration-200 ease-in-out cursor-pointer">
+    <Link to={`/table/${item.tableId}`} className="block">
+      <div className="flex items-center justify-between p-4 mb-2 border border-neutral-800 rounded-[0.625rem] bg-neutral-200 hover:brightness-125 hover:border-neutral-800 transition duration-200 ease-in-out cursor-pointer">
 
         <div className="flex items-center">
           <span className={`flex items-center justify-center w-10 h-10 mr-4 font-mono text-sm font-bold text-white ${urgencyColor} rounded-full shrink-0`}>
             {number}
           </span>
           <div className="flex flex-col">
-            <span className="text-sm text-white">{label}</span>
-            <span className="flex items-center text-xs text-neutral-400 mt-1">
+            <span className="text-sm text-black font-medium">{label}</span>
+            <span className="flex items-center text-xs text-neutral-500 mt-1">
               Table:&nbsp;<span className="font-bold">{item.tableName}</span>
             </span>
           </div>
