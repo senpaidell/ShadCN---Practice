@@ -34,7 +34,7 @@ export const signupUser = async (req: Request, res: Response): Promise<void> => 
         res.status(201).json({
             message: "Signup successful. Please check your email for the OTP."
         })
-    }catch (error: any) {
+    } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
 }
@@ -55,7 +55,7 @@ export const verifySignup = async (req: Request, res: Response): Promise<void> =
         user.otpExpires = undefined;
         await user.save();
 
-        res.status(200).json({message: "Account verified! You can now log in."})
+        res.status(200).json({ message: "Account verified! You can now log in." })
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
@@ -111,7 +111,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
         await user.save()
 
         await sendEmail(user.email, "Password Reset", `Your password reset OTP is: ${otp}`);
-        res.status(200).json({message: "OTP sent to your email"})
+        res.status(200).json({ message: "OTP sent to your email" })
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
@@ -122,7 +122,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     try {
         const { email, otp, newPassword } = req.body;
         const user = await User.findOne({ email, otp, otpExpires: { $gt: Date.now() } })
-        
+
         if (!user) {
             res.status(400).json({ error: "invalid or expired OTP" });
             return;
@@ -135,7 +135,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
         res.status(200).json({ message: "Password updated successfully" });
     } catch (error: any) {
-        res.status(400).json({error: error.message})
+        res.status(400).json({ error: error.message })
     }
 }
 
@@ -143,6 +143,30 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
     try {
         const users = await User.findById(req.user.id).select("firstName lastName")
         res.status(200).json(users)
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            res.status(401).json({ error: "Current password is incorrect" });
+            return;
+        }
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password updated successfully!" });
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
