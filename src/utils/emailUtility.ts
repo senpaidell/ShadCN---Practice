@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
-export const sendEmail = async (to: string, subject: string, text: string) => {
-    console.log(`Attempting to send OTP to: ${to}`); 
+export const sendEmail = async (to: string, subject: string, html: string) => {
+    console.log(`Attempting to send OTP to: ${to}`);
 
     const transporter = nodemailer.createTransport({
         service: "gmail",
@@ -12,9 +12,9 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     })
 
     await transporter.sendMail({
-        from: `"COSH Inventory Services" <${process.env.EMAIL_USER}>`, 
+        from: `"COSH Inventory Services" <${process.env.EMAIL_USER}>`,
         to,
         subject,
-        text
+        html
     })
 }
