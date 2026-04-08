@@ -1,91 +1,233 @@
-import { Button } from "../../ui/button"
+import type { Table } from "@tanstack/react-table";
+import { CircleCheck, Settings2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "../../ui/button";
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "../../ui/dialog";
-import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
-import { Checkbox } from "../../ui/checkbox";
-import { Settings2 } from "lucide-react";
+import { getDbKey } from "../data-table/columns";
 
-const tableOptions = [
-  {
-    id: 1,
-    name: "Name"
-  },
-  {
-    id: 2,
-    name: "Volume"
-  },
-  {
-    id: 3,
-    name: "Unit"
-  },
-  {
-    id: 4,
-    name: "In Stock"
-  },
-  {
-    id: 5,
-    name: "New Stock"
-  },
-  {
-    id: 6,
-    name: "Balance"
-  },
-  {
-    id: 7,
-    name: "Expiration"
-  },
-]
+interface FilterItemProps {
+  tableData: any;
+  table: Table<any>;
+}
 
-export function FilterItem() {
-    return (
-        <>
-          <Dialog>
-            <form>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="cursor-pointer">Filter</Button>
-              </DialogTrigger>
-              <DialogContent className="">
-                <DialogHeader>
-                  <DialogTitle>Filter Table</DialogTitle>
-                  <DialogDescription>
-                    Select the attribute/s you want to filter.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-row gap-x-4">
-                  
-                  <div className="w-full flex flex-col gap-y-4 border-1 border-white/10 rounded-[0.625rem] p-4 bg-neutral-900">
-                    {tableOptions.map((item) => (
-                      <div className="flex flex-row gap-x-4">
-                        <Checkbox className="cursor-pointer" id="Name" onClick={() => {console.log(item.id)}} />
-                        <Label htmlFor="Name">{item.name}</Label>
-                    </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border-1 border-white/10 p-4 text-center bg-neutral-900">
-                        <div><Settings2 size={32} /></div>
-                    <div>Custom</div>
-                    <div className="text-neutral-400 text-xs">Choose what you want to see in the table</div>
-                  </div>
+export function FilterItem({ tableData, table }: FilterItemProps) {
+  const [open, setOpen] = useState(false);
+  const [choice, setChoice] = useState(true);
+  const [localVisibility, setLocalVisibility] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Logic to get unique categories from the current rows
+  const uniqueCategories = Array.from(
+    new Set(table.getCoreRowModel().rows.map((row) => row.original.category)),
+  ).filter(Boolean) as string[];
+
+  const currentCategoryFilter =
+    (table.getColumn("category")?.getFilterValue() as string) || "All";
+
+  useEffect(() => {
+    if (open && table) {
+      const visibility: Record<string, boolean> = {};
+      table.getAllLeafColumns().forEach((col) => {
+        visibility[col.id] = col.getIsVisible();
+      });
+      setLocalVisibility(visibility);
+    }
+  }, [open, table]);
+
+  const availableAttributes = [
+    { name: "Name", id: "name" },
+    { name: "Category", id: "category" },
+    ...(tableData?.attributes || [])
+      .filter((a: any) => {
+        const n = typeof a === "string" ? a : a.name;
+        return n !== "Name" && n !== "Category";
+      })
+      .map((a: any) => {
+        const n = typeof a === "string" ? a : a.name;
+        return { name: n, id: getDbKey(n) };
+      }),
+    { name: "Status", id: "status" },
+  ];
+
+  const handleSelectAll = (val: boolean) => {
+    table.toggleAllColumnsVisible(val);
+    table.getColumn("rowNumber")?.toggleVisibility(true);
+    table.getColumn("actions")?.toggleVisibility(true);
+    const newVis: Record<string, boolean> = {};
+    table.getAllLeafColumns().forEach((col) => {
+      newVis[col.id] = col.getIsVisible();
+    });
+    setLocalVisibility(newVis);
+  };
+
+  const handleToggle = (columnId: string) => {
+    const column = table.getColumn(columnId);
+    if (column) {
+      const nextValue = !column.getIsVisible();
+      column.toggleVisibility(nextValue);
+      setLocalVisibility((prev) => ({ ...prev, [columnId]: nextValue }));
+    }
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    if (category === "All") {
+      table.getColumn("category")?.setFilterValue(undefined);
+    } else {
+      table.getColumn("category")?.setFilterValue(category);
+    }
+  };
+
+  const isAllSelected = availableAttributes.every(
+    (attr) => localVisibility[attr.id] !== false,
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) setChoice(true);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" className="cursor-pointer">
+          Filter
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[700px]">
+        <DialogHeader>
+          <DialogTitle>Filter Table</DialogTitle>
+          <DialogDescription>
+            Choose attributes to see or filter by category.
+          </DialogDescription>
+        </DialogHeader>
+
+        {choice ? (
+          <div className="flex flex-row justify-center gap-x-4 h-78 w-full">
+            <div
+              onClick={() => handleSelectAll(true)}
+              className={`w-1/2 cursor-pointer transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border p-4 text-center ${isAllSelected
+                  ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white border-black border"
+                  : "bg-neutral-300 border-black border hover:brightness-125"
+                }`}
+            >
+              <div>
+                <CircleCheck size={32} />
+              </div>
+              <div>All in One!</div>
+              <div className="text-xs">Show all available table columns</div>
+            </div>
+
+            <div
+              onClick={() => setChoice(false)}
+              className="w-1/2 cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-black p-4 text-center bg-neutral-300"
+            >
+              <div>
+                <Settings2 size={32} />
+              </div>
+              <div>Custom</div>
+              <div className="text-xs">
+                Choose specific settings and categories
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-y-6">
+            {/* Column Visibility Section */}
+            <div className="space-y-2">
+              <span className="text-sm font-bold uppercase text-neutral-500">
+                Display Columns
+              </span>
+              <div className="flex flex-row gap-4 w-full h-48">
+                <div className="w-full sm:w-2/3 flex flex-col gap-y-2 border border-black rounded-[0.625rem] p-4 bg-neutral-200 overflow-y-auto">
+                  {availableAttributes.map((attr, index) => {
+                    const isVisible = localVisibility[attr.id] !== false;
+                    return (
+                      <div
+                        key={attr.id}
+                        className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-black rounded-[0.625rem] p-3 items-center shrink-0 ${isVisible
+                            ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white"
+                            : "bg-neutral-400 text-neutral-600 border-neutral-500"
+                          }`}
+                        onClick={() => handleToggle(attr.id)}
+                      >
+                        <span
+                          className={`text-xs ${isVisible ? "text-white" : "text-neutral-500"}`}
+                        >
+                          {index + 1}.
+                        </span>
+                        <span className="text-sm font-medium">{attr.name}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" className="cursor-pointer">Cancel</Button>
-                  </DialogClose>
-                  <Button type="submit" className="cursor-pointer">Save changes</Button>
-                </DialogFooter>
-              </DialogContent>
-            </form>
-          </Dialog>
-        </>
-    )
+                <div className="hidden sm:flex w-1/3 flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border border-black p-4 text-center bg-neutral-300 text-neutral-600">
+                  <Settings2 size={24} />
+                  <span className="text-xs font-bold">Visibility</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Category Filter Section */}
+            <div className="space-y-2">
+              <span className="text-sm font-bold uppercase text-neutral-500">
+                Filter by Category
+              </span>
+              <div className="flex flex-wrap gap-2 p-4 border border-black rounded-[0.625rem] bg-neutral-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`cursor-pointer rounded-full ${currentCategoryFilter === "All" ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                  onClick={() => handleCategoryFilter("All")}
+                >
+                  All
+                </Button>
+                {uniqueCategories.map((cat) => (
+                  <Button
+                    key={cat}
+                    variant="outline"
+                    size="sm"
+                    className={`cursor-pointer rounded-full ${currentCategoryFilter === cat ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                    onClick={() => handleCategoryFilter(cat)}
+                  >
+                    {cat}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="flex sm:justify-between w-full mt-4">
+          {!choice && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="mr-auto cursor-pointer"
+              onClick={() => setChoice(true)}
+            >
+              Go Back
+            </Button>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <DialogClose asChild>
+              <Button variant="outline" className="cursor-pointer">
+                Close
+              </Button>
+            </DialogClose>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

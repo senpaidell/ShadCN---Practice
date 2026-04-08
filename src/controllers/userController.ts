@@ -30,7 +30,17 @@ export const signupUser = async (req: Request, res: Response): Promise<void> => 
             otpExpires
         });
 
-        await sendEmail(newUser.email, "Verify your account", `Your OTP is: ${otp}`);
+        const otpMessage = `
+  <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2>Security Verification</h2>
+    <p>Your One-Time Password (OTP) to proceed is:</p>
+    <h3 style="background-color: #f4f4f4; padding: 15px; letter-spacing: 5px;">${otp}</h3>
+    <p>This code will expire in 10 minutes.</p>
+  </div>
+`;
+
+
+        await sendEmail(newUser.email, "Verify your account", otpMessage);
         res.status(201).json({
             message: "Signup successful. Please check your email for the OTP."
         })

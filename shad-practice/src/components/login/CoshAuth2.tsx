@@ -21,12 +21,22 @@ type FormErrors = {
   lastName?: string;
   email?: string;
   password?: string;
+  confirmPassword?: string;
 };
+
+// Extracted Regex so it can be used for both validation and the live green glow
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const HAS_LETTER = /[a-zA-Z]/;
+const HAS_NUMBER = /[0-9]/;
+const HAS_SYMBOL = /[!@#$%^&*(),.?":{}|<>]/;
 
 const CoshAuth: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  // Toast Notification State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   // Form States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +44,7 @@ const CoshAuth: React.FC = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [otp, setOtp] = useState("");
-  
+
   // Validation & Error States
   const [errors, setErrors] = useState<FormErrors>({});
   const [loginError, setLoginError] = useState(false);
@@ -51,6 +61,14 @@ const CoshAuth: React.FC = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // --- Helper: Show Toast ---
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000); // Auto-hide after 4 seconds
+  };
 
   // --- Handlers ---
 
@@ -77,37 +95,41 @@ const CoshAuth: React.FC = () => {
         console.log("Successfully logged in");
         setLoginError(false);
         setLoginAttempts(0);
-                
+
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/dashboard");
       }
     } catch (error) {
-        console.error("Error on Login Window", error);
+      console.error("Error on Login Window", error);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   const validateSignup = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (firstName.length < 2 || firstName.length > 30) {
+    const fName = firstName.trim();
+    const lName = lastName.trim();
+
+    if (fName.length < 2 || fName.length > 30) {
       newErrors.firstName = "First name must be between 2 and 30 characters.";
     }
-    if (lastName.length < 2 || lastName.length > 30) {
+    if (lName.length < 2 || lName.length > 30) {
       newErrors.lastName = "Last name must be between 2 and 30 characters.";
     }
-    if (!email.includes("@") || email.length > 50) {
-      newErrors.email = "Email must contain '@' and be 50 characters or less.";
+
+    if (!EMAIL_REGEX.test(email) || email.length > 50) {
+      newErrors.email = "Please enter a valid email (max 50 characters).";
     }
 
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (password.length < 8 || !hasLetter || !hasNumber || !hasSymbol) {
+    if (password.length < 8 || !HAS_LETTER.test(password) || !HAS_NUMBER.test(password) || !HAS_SYMBOL.test(password)) {
       newErrors.password = "Password must be at least 8 characters and include letters, numbers, and symbols.";
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
     }
 
     setErrors(newErrors);
@@ -116,33 +138,38 @@ const CoshAuth: React.FC = () => {
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validateSignup()) return; 
+    if (!validateSignup()) return;
 
     setIsLoading(true);
     try {
       const res = await fetch('https://coshts-backend.vercel.app/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password })
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email,
+          password
+        })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // --- Added check for duplicate email ---
         if (data.error === "Email already in use" || data.message === "Email already in use") {
           setErrors(prev => ({ ...prev, email: "This email is already in use." }));
-          return; // Exit out of the function so the mode doesn't switch
+          return;
         }
         throw new Error(data.message || data.error || "Failed to save signup information");
       } else {
-        setPassword(""); 
-        setMode("signup-verify"); 
+        setPassword("");
+        setConfirmPassword("");
+        setMode("signup-verify");
       }
     } catch (error) {
-        console.error("Error on Sign Up Window", error);
+      console.error("Error on Sign Up Window", error);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -159,18 +186,21 @@ const CoshAuth: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || data.error || "Failed to verify OTP");
-      
-      setMode("login"); 
-      setEmail(""); 
+
+      setMode("login");
+      setEmail("");
       setOtp("");
+
+      // Trigger the Toast Notification!
+      showToast("Account successfully created! Please log in.");
+
     } catch (error) {
-        console.error("Error on OTP Verification Window", error);
+      console.error("Error on OTP Verification Window", error);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  
   const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -182,7 +212,7 @@ const CoshAuth: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-      
+
       setMode("forgot-verify");
     } catch (error) {
       console.error("Error requesting password reset", error);
@@ -191,10 +221,9 @@ const CoshAuth: React.FC = () => {
     }
   };
 
-  
   const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) return; //
+    if (password !== confirmPassword) return;
 
     setIsLoading(true);
     try {
@@ -203,14 +232,18 @@ const CoshAuth: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword: password })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to reset password");
-      
+
       setMode("login");
       setPassword("");
       setConfirmPassword("");
       setOtp("");
+
+      // Optional: Add a toast for password reset too!
+      showToast("Password successfully reset! Please log in.");
+
     } catch (error) {
       console.error("Error resetting password", error);
     } finally {
@@ -218,15 +251,37 @@ const CoshAuth: React.FC = () => {
     }
   };
 
-  // Helper function to handle switching modes and clearing errors
   const switchMode = (newMode: AuthMode) => {
     setErrors({});
     setLoginError(false);
     setMode(newMode);
   }
 
+  // --- Real-time Validation Checks for Green Glow (ONLY USED IN SIGNUP) ---
+  const isFirstNameValid = firstName.trim().length >= 2 && firstName.trim().length <= 30;
+  const isLastNameValid = lastName.trim().length >= 2 && lastName.trim().length <= 30;
+  const isEmailValid = EMAIL_REGEX.test(email) && email.length <= 50;
+  const isPasswordValid = password.length >= 8 && HAS_LETTER.test(password) && HAS_NUMBER.test(password) && HAS_SYMBOL.test(password);
+  const isConfirmPasswordValid = confirmPassword.length > 0 && confirmPassword === password;
+
   return (
     <div style={styles.pageWrapper}>
+
+      {/* TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: "-50%" }}
+            animate={{ opacity: 1, y: 20, x: "-50%" }}
+            exit={{ opacity: 0, y: -50, x: "-50%" }}
+            style={styles.toast}
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* BACKGROUND */}
       {mode !== "signup" && (
         <motion.div
           key={mode}
@@ -235,9 +290,8 @@ const CoshAuth: React.FC = () => {
           transition={{ duration: 1 }}
           style={{
             ...styles.backgroundImage,
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url(${
-              mode === "login" || mode === "signup-verify" ? loginBg : forgotBg
-            })`,
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url(${mode === "login" || mode === "signup-verify" ? loginBg : forgotBg
+              })`,
           }}
         />
       )}
@@ -263,12 +317,12 @@ const CoshAuth: React.FC = () => {
                     placeholder="Enter Email"
                     style={{
                       ...styles.input,
-                      ...(loginError ? styles.inputError : {})
+                      ...(loginError ? styles.inputError : {}) // Removed success glow here
                     }}
                     value={email}
                     onChange={(e) => {
-                      setEmail(e.target.value);
-                      setLoginError(false); // Clear error state on typing
+                      setEmail(e.target.value.trim());
+                      setLoginError(false);
                     }}
                     required
                   />
@@ -280,18 +334,17 @@ const CoshAuth: React.FC = () => {
                     placeholder="Enter Password"
                     style={{
                       ...styles.input,
-                      ...(loginError ? styles.inputError : {})
+                      ...(loginError ? styles.inputError : {}) // Removed success glow here
                     }}
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      setLoginError(false); // Clear error state on typing
+                      setLoginError(false);
                     }}
                     required
                   />
                 </div>
-                
-                {/* Login Errors & Attempt Limit Message */}
+
                 {loginError && (
                   <div style={{ textAlign: "center", marginTop: "4px" }}>
                     <span style={styles.errorText}>Wrong credentials.</span>
@@ -299,7 +352,7 @@ const CoshAuth: React.FC = () => {
                       <div style={{ marginTop: "6px" }}>
                         <span style={{ color: "#bbb", fontSize: "11px" }}>Too many failed attempts. </span>
                         <span
-                          onClick={() => {switchMode("forgot-email"),setPassword("")}}
+                          onClick={() => { switchMode("forgot-email"), setPassword("") }}
                           style={{ ...styles.link, color: "#ff4d4f", cursor: "pointer" }}
                         >
                           Reset your password?
@@ -309,21 +362,14 @@ const CoshAuth: React.FC = () => {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  style={styles.mainBtn}
-                >
+                <button type="submit" disabled={isLoading} style={styles.mainBtn}>
                   {isLoading ? "LOGGING IN..." : "LOG IN"}
                 </button>
                 <div style={styles.footerLinks}>
-                                  <span onClick={() => { switchMode("signup"), setEmail(""), setPassword(""),setFirstName(""),setLastName("") }} style={styles.link}>
+                  <span onClick={() => { switchMode("signup"), setEmail(""), setPassword(""), setConfirmPassword(""), setFirstName(""), setLastName("") }} style={styles.link}>
                     SIGN UP
                   </span>
-                  <span
-                                      onClick={() => { switchMode("forgot-email") , setEmail(""), setPassword("")}}
-                    style={styles.link}
-                  >
+                  <span onClick={() => { switchMode("forgot-email"), setEmail(""), setPassword("") }} style={styles.link}>
                     FORGOT PASSWORD
                   </span>
                 </div>
@@ -339,20 +385,22 @@ const CoshAuth: React.FC = () => {
                   <Logo />
                   <form onSubmit={handleSignUp} noValidate>
                     <div style={styles.formStack}>
+
                       <div style={styles.inputGroup}>
                         <label style={styles.label}>First Name</label>
                         <input
                           style={{
                             ...styles.input,
-                            ...(errors.firstName ? styles.inputError : {})
+                            ...(errors.firstName ? styles.inputError : (firstName && isFirstNameValid ? styles.inputSuccess : {}))
                           }}
                           placeholder="Enter First Name"
                           value={firstName}
                           onChange={(e) => {
-                             setFirstName(e.target.value);
-                             if (errors.firstName) setErrors({...errors, firstName: undefined});
+                            setFirstName(e.target.value);
+                            if (errors.firstName) setErrors({ ...errors, firstName: undefined });
                           }}
                         />
+                        {!errors.firstName && <span style={styles.helperText}>Must be between 2 and 30 characters.</span>}
                         {errors.firstName && <span style={styles.errorText}>{errors.firstName}</span>}
                       </div>
 
@@ -361,33 +409,35 @@ const CoshAuth: React.FC = () => {
                         <input
                           style={{
                             ...styles.input,
-                            ...(errors.lastName ? styles.inputError : {})
+                            ...(errors.lastName ? styles.inputError : (lastName && isLastNameValid ? styles.inputSuccess : {}))
                           }}
                           placeholder="Enter Last Name"
                           value={lastName}
                           onChange={(e) => {
                             setLastName(e.target.value);
-                            if (errors.lastName) setErrors({...errors, lastName: undefined});
+                            if (errors.lastName) setErrors({ ...errors, lastName: undefined });
                           }}
                         />
+                        {!errors.lastName && <span style={styles.helperText}>Must be between 2 and 30 characters.</span>}
                         {errors.lastName && <span style={styles.errorText}>{errors.lastName}</span>}
                       </div>
 
                       <div style={styles.inputGroup}>
                         <label style={styles.label}>Email</label>
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           style={{
                             ...styles.input,
-                            ...(errors.email ? styles.inputError : {})
+                            ...(errors.email ? styles.inputError : (email && isEmailValid ? styles.inputSuccess : {}))
                           }}
-                          placeholder="Enter Email" 
-                          value={email} 
+                          placeholder="Enter Email"
+                          value={email}
                           onChange={(e) => {
-                            setEmail(e.target.value);
-                            if (errors.email) setErrors({...errors, email: undefined});
-                          }} 
+                            setEmail(e.target.value.trim());
+                            if (errors.email) setErrors({ ...errors, email: undefined });
+                          }}
                         />
+                        {!errors.email && <span style={styles.helperText}>Valid email, max 50 characters.</span>}
                         {errors.email && <span style={styles.errorText}>{errors.email}</span>}
                       </div>
 
@@ -397,16 +447,35 @@ const CoshAuth: React.FC = () => {
                           type="password"
                           style={{
                             ...styles.input,
-                            ...(errors.password ? styles.inputError : {})
+                            ...(errors.password ? styles.inputError : (password && isPasswordValid ? styles.inputSuccess : {}))
                           }}
                           placeholder="Enter Password"
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
-                            if (errors.password) setErrors({...errors, password: undefined});
+                            if (errors.password) setErrors({ ...errors, password: undefined });
                           }}
                         />
+                        {!errors.password && <span style={styles.helperText}>Min 8 characters, 1 letter, 1 number, 1 symbol.</span>}
                         {errors.password && <span style={styles.errorText}>{errors.password}</span>}
+                      </div>
+
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Confirm Password</label>
+                        <input
+                          type="password"
+                          style={{
+                            ...styles.input,
+                            ...(errors.confirmPassword ? styles.inputError : (confirmPassword && isConfirmPasswordValid ? styles.inputSuccess : {}))
+                          }}
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                          }}
+                        />
+                        {errors.confirmPassword && <span style={styles.errorText}>{errors.confirmPassword}</span>}
                       </div>
 
                       <button type="submit" disabled={isLoading} style={styles.mainBtn}>
@@ -414,7 +483,7 @@ const CoshAuth: React.FC = () => {
                       </button>
                       <div style={{ textAlign: "center", marginTop: "15px" }}>
                         <span
-                            onClick={() => { switchMode("login"), setEmail(""),setPassword("") }}
+                          onClick={() => { switchMode("login"), setEmail(""), setPassword(""), setConfirmPassword("") }}
                           style={styles.link}
                         >
                           LOG IN
@@ -424,8 +493,7 @@ const CoshAuth: React.FC = () => {
                   </form>
                 </div>
               </div>
-              
-              {/* Only show image side if NOT mobile */}
+
               {!isMobile && (
                 <div
                   style={{
@@ -449,7 +517,7 @@ const CoshAuth: React.FC = () => {
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Verification Code</label>
                   <input
-                    style={styles.input}
+                    style={styles.input} // Removed success glow here
                     placeholder="Enter Verification Code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -478,12 +546,12 @@ const CoshAuth: React.FC = () => {
                 </div>
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Email</label>
-                  <input 
-                    type="email" 
-                    style={styles.input} 
-                    placeholder="Enter Email" 
+                  <input
+                    type="email"
+                    style={styles.input} // Removed success glow here
+                    placeholder="Enter Email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.trim())}
                     required
                   />
                 </div>
@@ -503,18 +571,18 @@ const CoshAuth: React.FC = () => {
           {mode === "forgot-verify" && (
             <div style={styles.cardContent}>
               <Logo />
-              <form 
-                onSubmit={(e) => { 
-                  e.preventDefault(); 
-                  if (otp) switchMode("forgot-reset"); 
-                }} 
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (otp) switchMode("forgot-reset");
+                }}
                 style={styles.formStack}
               >
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Verification Code</label>
-                  <input 
-                    style={styles.input} 
-                    placeholder="Enter Code" 
+                  <input
+                    style={styles.input} // Removed success glow here
+                    placeholder="Enter Code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     required
@@ -541,7 +609,7 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>New Password</label>
                   <input
                     type="password"
-                    style={styles.input}
+                    style={styles.input} // Removed success glow here
                     placeholder="New Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -550,13 +618,14 @@ const CoshAuth: React.FC = () => {
                 </div>
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Confirm Password</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     style={{
                       ...styles.input,
+                      // Kept the red error glow for mismatched passwords
                       ...(password !== confirmPassword && confirmPassword ? styles.inputError : {})
                     }}
-                    placeholder="Confirm" 
+                    placeholder="Confirm"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -565,9 +634,9 @@ const CoshAuth: React.FC = () => {
                     <span style={styles.errorText}>Passwords do not match</span>
                   )}
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={isLoading || (password !== confirmPassword)} 
+                <button
+                  type="submit"
+                  disabled={isLoading || (password !== confirmPassword)}
                   style={styles.mainBtn}
                 >
                   {isLoading ? "UPDATING..." : "UPDATE PASSWORD"}
@@ -605,6 +674,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflow: "hidden",
     position: "relative",
   },
+  toast: {
+    position: "absolute",
+    top: "20px",
+    left: "50%",
+    backgroundColor: "#52c41a", // Green
+    color: "white",
+    padding: "12px 24px",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    fontSize: "14px",
+    fontFamily: "sans-serif",
+    zIndex: 100, // Ensure it sits on top of everything
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    textAlign: "center",
+  },
   backgroundImage: {
     position: "absolute",
     top: 0,
@@ -633,7 +717,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   splitView: { display: "flex", width: "100%", height: "100%" },
   formSection: {
-    // Flex is now controlled dynamically in the inline styles above
     backgroundColor: "#131313",
     display: "flex",
     flexDirection: "column",
@@ -669,17 +752,29 @@ const styles: { [key: string]: React.CSSProperties } = {
   input: {
     padding: "10px",
     borderRadius: "4px",
-    border: "1px solid transparent", 
+    border: "2px solid transparent",
     backgroundColor: "#fff",
     fontSize: "14px",
     width: "100%",
     boxSizing: "border-box",
     color: "black",
-    transition: "border-color 0.3s ease",
+    outline: "none",
+    transition: "all 0.3s ease",
   },
   inputError: {
     border: "2px solid #ff4d4f",
     backgroundColor: "#fff1f0",
+    boxShadow: "0 0 8px rgba(255, 77, 79, 0.6)",
+  },
+  inputSuccess: {
+    border: "2px solid #52c41a",
+    boxShadow: "0 0 8px rgba(82, 196, 26, 0.6)",
+  },
+  helperText: {
+    color: "#888",
+    fontSize: "10px",
+    marginTop: "4px",
+    fontFamily: "sans-serif",
   },
   errorText: {
     color: "#ff4d4f",
