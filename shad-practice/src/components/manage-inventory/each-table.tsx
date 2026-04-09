@@ -44,6 +44,7 @@ export default function EachTable() {
     const [isStatusModalOpen, setIsStatusModelOpen] = useState(false);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isConfirmEditModalOpen, setIsConfirmEditModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [editFormData, setEditFormData] = useState<any>({});
 
@@ -184,6 +185,7 @@ export default function EachTable() {
                 });
             }
             setIsEditModalOpen(false);
+            setIsConfirmEditModalOpen(false);
         },
         onError: () => toast.error("Failed to update item."),
     });
@@ -433,6 +435,15 @@ export default function EachTable() {
                                 .filter((name: string) => name !== "Name")
                                 .map((attrName: string) => {
                                     const dbKey = getDbKey(attrName);
+
+                                    // Check if this field is meant for dates
+                                    const isDateField = dbKey.toLowerCase().includes("date") || attrName.toLowerCase().includes("expiration");
+
+                                    // HTML date inputs strictly require YYYY-MM-DD format.
+                                    const inputValue = isDateField && editFormData[dbKey]
+                                        ? String(editFormData[dbKey]).split("T")[0]
+                                        : (editFormData[dbKey] || "");
+
                                     return (
                                         <div key={dbKey} className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700">
@@ -440,11 +451,13 @@ export default function EachTable() {
                                             </label>
                                             <Input
                                                 type={
-                                                    dbKey.includes("Stock") || dbKey === "volume"
-                                                        ? "number"
-                                                        : "text"
+                                                    isDateField
+                                                        ? "date"
+                                                        : dbKey.includes("Stock") || dbKey === "volume"
+                                                            ? "number"
+                                                            : "text"
                                                 }
-                                                value={editFormData[dbKey] || ""}
+                                                value={inputValue}
                                                 onChange={(e) =>
                                                     setEditFormData({
                                                         ...editFormData,
@@ -468,15 +481,43 @@ export default function EachTable() {
                                 Cancel
                             </Button>
                             <Button
-                                onClick={() => handleEditItem()}
+                                onClick={() => setIsConfirmEditModalOpen(true)}
                                 disabled={isEditing || !editFormData.name?.trim()}
-                                className="bg-black text-white hover:bg-gray-800"
+                                className="bg-black text-white hover:bg-gray-800 cursor-pointer"
+                            >
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* --- NEW EDIT CONFIRMATION MODAL --- */}
+                <Dialog open={isConfirmEditModalOpen} onOpenChange={setIsConfirmEditModalOpen}>
+                    <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-black">
+                        <DialogHeader>
+                            <DialogTitle>Confirm Update</DialogTitle>
+                            <DialogDescription className="text-gray-600 mt-2">
+                                Are you sure you want to update this item's information?
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-4">
+                            <Button
+                                variant="secondary"
+                                onClick={() => setIsConfirmEditModalOpen(false)}
+                                disabled={isEditing}
+                                className="bg-gray-200 text-black hover:bg-gray-300 cursor-pointer"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => handleEditItem()}
+                                disabled={isEditing}
+                                className="bg-black text-white hover:bg-gray-800 cursor-pointer"
                             >
                                 {isEditing ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    "Save Changes"
-                                )}
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : null}
+                                {isEditing ? "Updating..." : "Yes, update item"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

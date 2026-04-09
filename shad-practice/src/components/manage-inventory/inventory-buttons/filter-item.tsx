@@ -22,25 +22,36 @@ interface FilterItemProps {
 export function FilterItem({ tableData, table }: FilterItemProps) {
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState(true);
-  const [localVisibility, setLocalVisibility] = useState<
-    Record<string, boolean>
-  >({});
+
+  // --- Local States for Instant UI Updates ---
+  const [localVisibility, setLocalVisibility] = useState<Record<string, boolean>>({});
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeStock, setActiveStock] = useState<string>("All");
+  const [activeExp, setActiveExp] = useState<string>("All");
 
   // Logic to get unique categories from the current rows
   const uniqueCategories = Array.from(
     new Set(table.getCoreRowModel().rows.map((row) => row.original.category)),
   ).filter(Boolean) as string[];
 
-  const currentCategoryFilter =
-    (table.getColumn("category")?.getFilterValue() as string) || "All";
-
+  // Sync dialog UI with table state when opened
   useEffect(() => {
     if (open && table) {
+      // Sync Visibility
       const visibility: Record<string, boolean> = {};
       table.getAllLeafColumns().forEach((col) => {
         visibility[col.id] = col.getIsVisible();
       });
       setLocalVisibility(visibility);
+
+      // Sync Category
+      const catFilter = table.getColumn("category")?.getFilterValue() as string;
+      setActiveCategory(catFilter || "All");
+
+      // Sync Status & Expiration
+      const statusFilterState = table.getColumn("status")?.getFilterValue() as { stockFilter: string, expFilter: string } | undefined;
+      setActiveStock(statusFilterState?.stockFilter || "All");
+      setActiveExp(statusFilterState?.expFilter || "All");
     }
   }, [open, table]);
 
@@ -79,12 +90,30 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
     }
   };
 
+  // --- Updated Handlers with Local State ---
   const handleCategoryFilter = (category: string) => {
+    setActiveCategory(category); // Update UI instantly
     if (category === "All") {
       table.getColumn("category")?.setFilterValue(undefined);
     } else {
       table.getColumn("category")?.setFilterValue(category);
     }
+  };
+
+  const handleStockFilter = (status: string) => {
+    setActiveStock(status); // Update UI instantly
+    table.getColumn("status")?.setFilterValue({
+      stockFilter: status,
+      expFilter: activeExp
+    });
+  };
+
+  const handleExpFilter = (status: string) => {
+    setActiveExp(status); // Update UI instantly
+    table.getColumn("status")?.setFilterValue({
+      stockFilter: activeStock,
+      expFilter: status
+    });
   };
 
   const isAllSelected = availableAttributes.every(
@@ -108,7 +137,7 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
         <DialogHeader>
           <DialogTitle>Filter Table</DialogTitle>
           <DialogDescription>
-            Choose attributes to see or filter by category.
+            Choose attributes to see or filter by category and status.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,8 +146,8 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
             <div
               onClick={() => handleSelectAll(true)}
               className={`w-1/2 cursor-pointer transition duration-200 ease-in-out flex flex-col gap-y-2 justify-center items-center rounded-[0.625rem] border p-4 text-center ${isAllSelected
-                  ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white border-black border"
-                  : "bg-neutral-300 border-black border hover:brightness-125"
+                ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white border-black border"
+                : "bg-neutral-300 border-black border hover:brightness-125"
                 }`}
             >
               <div>
@@ -142,7 +171,7 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-y-6">
+          <div className="flex flex-col gap-y-6 max-h-[60vh] overflow-y-auto pr-2">
             {/* Column Visibility Section */}
             <div className="space-y-2">
               <span className="text-sm font-bold uppercase text-neutral-500">
@@ -156,8 +185,8 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
                       <div
                         key={attr.id}
                         className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-black rounded-[0.625rem] p-3 items-center shrink-0 ${isVisible
-                            ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white"
-                            : "bg-neutral-400 text-neutral-600 border-neutral-500"
+                          ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white"
+                          : "bg-neutral-400 text-neutral-600 border-neutral-500"
                           }`}
                         onClick={() => handleToggle(attr.id)}
                       >
@@ -187,7 +216,7 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`cursor-pointer rounded-full ${currentCategoryFilter === "All" ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                  className={`cursor-pointer rounded-full ${activeCategory === "All" ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
                   onClick={() => handleCategoryFilter("All")}
                 >
                   All
@@ -197,10 +226,50 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
                     key={cat}
                     variant="outline"
                     size="sm"
-                    className={`cursor-pointer rounded-full ${currentCategoryFilter === cat ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                    className={`cursor-pointer rounded-full ${activeCategory === cat ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
                     onClick={() => handleCategoryFilter(cat)}
                   >
                     {cat}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stock Status Filter Section */}
+            <div className="space-y-2">
+              <span className="text-sm font-bold uppercase text-neutral-500">
+                Filter by Stock Status
+              </span>
+              <div className="flex flex-wrap gap-2 p-4 border border-black rounded-[0.625rem] bg-neutral-200">
+                {["All", "Good", "Low", "Over"].map((status) => (
+                  <Button
+                    key={status}
+                    variant="outline"
+                    size="sm"
+                    className={`cursor-pointer rounded-full ${activeStock === status ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                    onClick={() => handleStockFilter(status)}
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expiration Status Filter Section */}
+            <div className="space-y-2">
+              <span className="text-sm font-bold uppercase text-neutral-500">
+                Filter by Expiration
+              </span>
+              <div className="flex flex-wrap gap-2 p-4 border border-black rounded-[0.625rem] bg-neutral-200">
+                {["All", "Valid", "Expired", "Expiring Soon"].map((status) => (
+                  <Button
+                    key={status}
+                    variant="outline"
+                    size="sm"
+                    className={`cursor-pointer rounded-full ${activeExp === status ? "bg-black text-white hover:bg-black/90" : "bg-neutral-400 text-black"}`}
+                    onClick={() => handleExpFilter(status)}
+                  >
+                    {status}
                   </Button>
                 ))}
               </div>
