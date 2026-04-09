@@ -20,6 +20,7 @@ export const globalSearch = async (req: AuthRequest, res: Response) => {
         const [tables, items] = await Promise.all([
             InventoryTable.find({
                 name: searchRegex,
+                user: req.user.id
             }).limit(5).select('name _id'),
 
             Item.find({
