@@ -28,7 +28,7 @@ const AuditLogSchema = new Schema<IAuditLog>({
     }
 },
     {
-        timestamps: true // This automatically handles the "date" for our frontend
+        timestamps: true
     });
 
 export const AuditLog = mongoose.models.AuditLog || mongoose.model<IAuditLog>("AuditLog", AuditLogSchema);

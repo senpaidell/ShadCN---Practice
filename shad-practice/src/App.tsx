@@ -12,6 +12,7 @@ import SignUp from "./components/login/signup";
 import ProtectedRoute from "./components/login/ProtectedRoute";
 import CoshAuth from "./components/login/CoshAuth2";
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from "sonner";
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -84,12 +85,20 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+
   try {
     return (
 
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
+      <>
+        <QueryClientProvider client={queryClient}>
+
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+
+        <Toaster position="top-center" richColors closeButton={false} duration={2000} />
+      </>
+
+
     )
   } catch (error) {
     console.log("There is an error");

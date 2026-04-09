@@ -149,10 +149,20 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     }
 }
 
+// export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+//     try {
+//         const users = await User.findById(req.user.id).select("firstName lastName")
+//         res.status(200).json(users)
+//     } catch (error: any) {
+//         res.status(400).json({ error: error.message });
+//     }
+// }
+
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const users = await User.findById(req.user.id).select("firstName lastName")
-        res.status(200).json(users)
+        // Added 'email' to the select string so the frontend doesn't throw the "Email not found" alert
+        const users = await User.findById(req.user.id).select("firstName lastName email");
+        res.status(200).json(users);
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
@@ -177,6 +187,78 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
         await user.save();
 
         res.status(200).json({ message: "Password updated successfully!" });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+// UPDATE PROFILE (Only allows changing first and last name)
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { firstName, lastName } = req.body;
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        if (firstName) user.firstName = firstName;
+        if (lastName) user.lastName = lastName;
+
+        await user.save();
+        res.status(200).json({ message: "Profile updated successfully" });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+// REQUEST LOGGED-IN PASSWORD CHANGE OTP
+export const requestPasswordChangeOTP = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        // Look up the user by their JWT token ID, guaranteeing we send it to their true email
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpires = new Date(Date.now() + 10 * 60000);
+        await user.save();
+
+        await sendEmail(user.email, "Security Verification", `Your OTP to securely change your password is: ${otp}`);
+        res.status(200).json({ message: "OTP sent to your secure email" });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+// VERIFY LOGGED-IN PASSWORD CHANGE
+export const verifyPasswordChange = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { otp, newPassword } = req.body;
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        // Check if OTP matches and hasn't expired
+        if (user.otp !== otp || !user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+            res.status(400).json({ error: "Invalid or expired OTP" });
+            return;
+        }
+
+        user.password = newPassword;
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ message: "Password updated successfully" });
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
