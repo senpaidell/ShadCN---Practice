@@ -105,7 +105,7 @@ function TableGroup({ table }: { table: InventoryTable }) {
                 targetName: selectedItem.name,
                 tableName: table.name,
                 activity: actionType === "in" ? "Item Added" : "Item Subtracted",
-                changes: actionType === "in" 
+                changes: actionType === "in"
                     ? { added: Number(quantity), field: "Stock" }
                     : { subtracted: Number(quantity), field: "Stock" }
             });
@@ -151,12 +151,32 @@ function TableGroup({ table }: { table: InventoryTable }) {
                                 <CarouselItem key={item._id} className="pl-2 basis-auto">
                                     <button
                                         onClick={() => openModal(item)}
-                                        className={`flex flex-col hover:brightness-125 transition-all cursor-pointer h-[12vh] w-[12vh] shrink-0 border-1 flex justify-center items-center ${(Math.round((item.currentStock / item.parLevel) * 100)) >= 50 && (Math.round((item.currentStock / item.parLevel) * 100)) <= 100 ? "bg-linear-to-t from-emerald-400 to-emerald-800" : (Math.round((item.currentStock / item.parLevel) * 100)) > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700"} border-neutral-800 rounded-[0.625rem] text-black`}
+                                        className={`flex flex-col hover:brightness-125 transition-all cursor-pointer h-[12vh] w-[12vh] shrink-0 border-1 flex justify-center items-center rounded-[0.625rem] 
+                                                ${!item.parLevel || item.parLevel === 0
+                                                ? "bg-neutral-600 text-neutral-200 border-zinc-700"
+                                                : (Math.round((item.currentStock / item.parLevel) * 100)) >= 50 && (Math.round((item.currentStock / item.parLevel) * 100)) <= 100
+                                                    ? "bg-linear-to-t from-emerald-400 to-emerald-800 text-black border-neutral-800"
+                                                    : (Math.round((item.currentStock / item.parLevel) * 100)) > 100
+                                                        ? "bg-linear-to-t from-sky-500 to-indigo-700 text-black border-neutral-800"
+                                                        : "bg-linear-to-t from-purple-500 to-pink-700 text-black border-neutral-800"
+                                            }`}
                                     >
                                         <div className="text-neutral-300"><Image size={32} /></div>
                                         <div className="mt-2 text-sm text-neutral-100 font-semibold text-center px-1 truncate w-full">
                                             {item.name}
-                                            <div>( {item.currentStock} / {item.parLevel} )</div>
+                                            <div className="flex flex-col items-center justify-center leading-tight">
+                                                {/* The Numbers (Top) */}
+                                                <span className="font-medium">
+                                                    ( {item.currentStock} / {item.parLevel || 0} )
+                                                </span>
+
+                                                {/* The Warning Label (Below) */}
+                                                {(!item.parLevel || item.parLevel === 0) && (
+                                                    <span className="text-[10px] mt-1 text-red-400 tracking-wider">
+                                                        No Par Level
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </button>
                                 </CarouselItem>

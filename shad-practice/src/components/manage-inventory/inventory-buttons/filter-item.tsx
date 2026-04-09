@@ -241,7 +241,7 @@ export function FilterItem({ tableData, table }: FilterItemProps) {
                 Filter by Stock Status
               </span>
               <div className="flex flex-wrap gap-2 p-4 border border-black rounded-[0.625rem] bg-neutral-200">
-                {["All", "Good", "Low", "Over"].map((status) => (
+                {["All", "Good", "Low", "Over", "No Par Level"].map((status) => (
                   <Button
                     key={status}
                     variant="outline"
