@@ -173,17 +173,20 @@ export function HomePage() {
 
     const tilesRemaining = Array.isArray(tileItems) ? tileItems
         .filter((item) => item.itemId !== null)
-        // Sort items by createdAt descending (newest first) before mapping
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .map((item) => {
-            const inStock = item.itemId.currentStock;
+            const inStock = item.itemId.currentStock || 0;
             const parLevel = item.itemId.parLevel;
 
-            const percentage = Math.round((inStock / parLevel) * 100)
+            const isNoPar = !parLevel || parLevel === 0;
+            const percentage = isNoPar ? Infinity : Math.round((inStock / parLevel) * 100);
+
             return {
                 id: item._id,
                 name: item.itemId?.name,
                 percentage: percentage,
+                currentStock: inStock,
+                isNoPar: isNoPar,
                 table: item.tableId?.name
             }
         }) : [];
@@ -232,7 +235,13 @@ export function HomePage() {
                                             {/* Render the actual populated tiles (Now sorted newest first) */}
                                             {tilesRemaining.map((items) => (
                                                 <CarouselItem key={items.id} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4 min-w-[280px]">
-                                                    <div className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out relative h-64 w-full rounded-[0.625rem] ${items.percentage >= 50 && items.percentage <= 100 ? "bg-linear-to-t from-emerald-400 to-emerald-800" : (items.percentage > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700")}`}>
+                                                    <div className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out relative h-64 w-full rounded-[0.625rem] 
+                                                            ${items.isNoPar
+                                                            ? "bg-neutral-600"
+                                                            : items.percentage >= 50 && items.percentage <= 100
+                                                                ? "bg-linear-to-t from-emerald-400 to-emerald-800"
+                                                                : (items.percentage > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700")
+                                                        }`}>
 
                                                         <button onClick={(e) => {
                                                             e.stopPropagation();
@@ -248,10 +257,26 @@ export function HomePage() {
                                                             {items.name}
                                                         </span>
                                                         <span className="p-4 absolute bottom-8 left-0 text-5xl font-bold text-neutral-200">
-                                                            {items.percentage}%
+                                                            {items.isNoPar ? `${items.currentStock} / 0` : `${items.percentage}%`}
                                                         </span>
                                                         <span className={`p-4 absolute bottom-0 right-0 text-3xl font-bold text-neutral-200`}>
-                                                            {items.percentage >= 50 && items.percentage <= 100 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-green-600 text-green-600">Good</span>) : (items.percentage > 100 ? (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-blue-600 text-blue-400">Over Stocked!</span>) : (<span className="p-2 bg-white rounded-[0.625rem] text-sm border border-red-600 text-red-600">Restock Now!</span>))}
+                                                            {items.isNoPar ? (
+                                                                <span className="p-2 bg-white rounded-[0.625rem] text-sm border border-zinc-700 text-neutral-600">
+                                                                    No Par Level
+                                                                </span>
+                                                            ) : items.percentage >= 50 && items.percentage <= 100 ? (
+                                                                <span className="p-2 bg-white rounded-[0.625rem] text-sm border border-green-600 text-green-600">
+                                                                    Good
+                                                                </span>
+                                                            ) : items.percentage > 100 ? (
+                                                                <span className="p-2 bg-white rounded-[0.625rem] text-sm border border-blue-600 text-blue-400">
+                                                                    Over Stocked!
+                                                                </span>
+                                                            ) : (
+                                                                <span className="p-2 bg-white rounded-[0.625rem] text-sm border border-red-600 text-red-600">
+                                                                    Restock Now!
+                                                                </span>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </CarouselItem>
