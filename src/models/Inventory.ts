@@ -70,4 +70,8 @@ const InventoryTableSchema = new Schema({
   }]
 }, { timestamps: true });
 
-export const InventoryTable = mongoose.models.InventoryTable || mongoose.model("InventoryTable", InventoryTableSchema);
+// export const InventoryTable = mongoose.models.InventoryTable || mongoose.model("InventoryTable", InventoryTableSchema);
+
+export const InventoryTable =
+  (mongoose.models.InventoryTable as mongoose.Model<IInventoryTable>) ||
+  mongoose.model<IInventoryTable>("InventoryTable", InventoryTableSchema);

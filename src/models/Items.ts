@@ -24,4 +24,8 @@ const ItemSchema = new Schema<IItem>({
     expiration: { type: Date }
 }, { timestamps: true });
 
-export const Item = mongoose.models.Item || mongoose.model<IItem>("Item", ItemSchema);
+// export const Item = mongoose.models.Item || mongoose.model<IItem>("Item", ItemSchema);
+
+export const Item =
+    (mongoose.models.Item as mongoose.Model<IItem>) ||
+    mongoose.model<IItem>("Item", ItemSchema);
