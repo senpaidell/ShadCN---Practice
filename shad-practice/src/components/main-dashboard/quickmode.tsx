@@ -104,7 +104,10 @@ function TableGroup({ table }: { table: InventoryTable }) {
             logAudit.mutate({
                 targetName: selectedItem.name,
                 tableName: table.name,
-                activity: actionType === "in" ? "Item Added" : "Item Subtracted"
+                activity: actionType === "in" ? "Item Added" : "Item Subtracted",
+                changes: actionType === "in" 
+                    ? { added: Number(quantity), field: "Stock" }
+                    : { subtracted: Number(quantity), field: "Stock" }
             });
 
             // 3. Close the modal
