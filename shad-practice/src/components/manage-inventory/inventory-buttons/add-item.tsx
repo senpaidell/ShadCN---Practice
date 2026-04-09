@@ -44,7 +44,8 @@ export function AddItem({ tableData, existingItems, onSave }: { tableData: any, 
       }
     }
 
-    const finalCategory = category === "Custom" ? customCategory : category;
+    const baseCategory = category === "Custom" ? customCategory : category;
+    const finalCategory = baseCategory.trim() || "Uncategorized";
 
     const itemData = {
       tableId: tableData._id,
