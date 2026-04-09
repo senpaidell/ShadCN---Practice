@@ -29,15 +29,19 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onTableInstance?: (table: any) => void;
+  highlightId?: string | null;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onTableInstance,
+  highlightId
 }: DataTableProps<TData, TValue>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+
 
   // Default sort remains by createdAt (Oldest first)
   const [sorting, setSorting] = useState<SortingState>([
@@ -67,6 +71,31 @@ export function DataTable<TData, TValue>({
   });
 
   useEffect(() => {
+    if (highlightId && data.length > 0) {
+      // 1. Find the index of the item in the full data array
+      const itemIndex = data.findIndex((item: any) => item._id === highlightId);
+
+      if (itemIndex !== -1) {
+        // 2. Calculate which page that index belongs to
+        const pageSize = table.getState().pagination.pageSize;
+        const targetPage = Math.floor(itemIndex / pageSize);
+
+        // 3. Set the table to that page
+        table.setPageIndex(targetPage);
+
+        // 4. Scroll to it after a short delay to let the page render
+        const timer = setTimeout(() => {
+          const element = document.querySelector(".animate-glow");
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [highlightId, data, table]); // Added table to dependencies
+
+  useEffect(() => {
     if (onTableInstance) {
       onTableInstance(table);
     }
@@ -87,8 +116,8 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={`text-neutral-400 ${header.column.id === "actions"
-                          ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0"
-                          : ""
+                        ? "sticky right-0 z-20 bg-neutral-900 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.2)] border-l border-neutral-800 sm:static sm:z-auto sm:bg-transparent sm:shadow-none sm:border-l-0"
+                        : ""
                         }`}
                     >
                       {header.isPlaceholder
@@ -109,7 +138,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-neutral-800 hover:bg-neutral-800/50 group"
+                  className={`border-neutral-800 hover:bg-neutral-800/50 group ${(row.original as any)._id === highlightId ? "animate-glow" : ""
+                    }`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

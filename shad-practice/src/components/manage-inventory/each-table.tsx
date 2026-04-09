@@ -7,8 +7,8 @@ import {
     Minus,
     Plus,
 } from "lucide-react";
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -31,6 +31,8 @@ import { useLogAudit } from "@/hooks/useLogAudit";
 
 export default function EachTable() {
     const { id } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const highlightId = searchParams.get("highlight");
     const queryClient = useQueryClient();
     const logAudit = useLogAudit();
     const token = localStorage.getItem("token");
@@ -55,6 +57,17 @@ export default function EachTable() {
     const [stockItem, setStockItem] = useState<any>(null);
     const [actionType, setActionType] = useState<"in" | "out">("in");
     const [quantity, setQuantity] = useState<number | string>(1);
+
+    useEffect(() => {
+        if (highlightId) {
+            const timer = setTimeout(() => {
+                // Updated to 60.5 seconds to ensure the animation finishes
+                setSearchParams({}, { replace: true });
+            }, 60500);
+
+            return () => clearTimeout(timer);
+        }
+    }, [highlightId, setSearchParams]);
 
     const { data: tableData, isLoading: isTableLoading } = useQuery({
         queryKey: ["table", id],
@@ -369,6 +382,7 @@ export default function EachTable() {
                         columns={columns}
                         data={rows}
                         onTableInstance={setTableInstance}
+                        highlightId={highlightId}
                     />
                 </div>
 

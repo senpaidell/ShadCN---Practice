@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 export function useLowStockItems() {
     const token = localStorage.getItem("token");
 
-    // 1. Fetch tables first (to get the IDs needed for the items query)
     const { data: tables = [] } = useQuery({
         queryKey: ["tables-for-badge"],
         queryFn: async () => {
@@ -17,27 +16,49 @@ export function useLowStockItems() {
 
     const tableIds = tables.map((t: any) => t._id).join(",");
 
-    // 2. Fetch items and apply the EXACT same filter as notification-page.tsx
-    const { data: lowStockItems = [], isLoading } = useQuery({
-        queryKey: ["low-stock-badge-count", tableIds],
+    const { data: totalAlertCount = 0, isLoading } = useQuery({
+        queryKey: ["total-alerts-count", tableIds],
         queryFn: async () => {
             const res = await fetch(`https://coshts-backend.vercel.app/api/items/dashboard?ids=${tableIds}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const allItems: any[] = await res.json();
 
-            return allItems.filter((item) => {
+            let alertsCount = 0;
+            const today = new Date();
+
+            allItems.forEach((item) => {
+                // 1. REPLICATE STOCK ALERT LOGIC
                 const percentage = item.parLevel > 0
                     ? (item.currentStock / item.parLevel) * 100
                     : 0;
 
+                if (item.currentStock === 0 || percentage < 50) {
+                    alertsCount++;
+                }
 
-                return item.currentStock === 0 || percentage < 50;
+                // 2. REPLICATE EXPIRATION ALERT LOGIC
+                if (item.expiration) {
+                    const expDate = new Date(item.expiration);
+                    const timeDiff = expDate.getTime() - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    if (daysDiff <= 30) {
+                        alertsCount++;
+                    }
+                }
             });
+
+            return alertsCount;
         },
         enabled: tableIds.length > 0,
         refetchInterval: 5000,
     });
 
-    return { lowStockItems, isLoading };
+    // We return it as an array-like structure or just the count 
+    // to keep your NavBar.tsx from breaking
+    return {
+        lowStockItems: { length: totalAlertCount },
+        isLoading
+    };
 }
