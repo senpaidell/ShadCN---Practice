@@ -22,7 +22,9 @@ interface InventoryTable {
     attributes: string[],
     icon: any,
     createdAt: string,
-    url: string
+    url: string,
+    itemCount?: number, // Added to support the item count badge
+    items?: any[]       // Fallback property
 }
 
 interface SelectedItem {
@@ -181,12 +183,26 @@ export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps)
                     <div className="h-64 border-white/10 border-1 rounded-[0.625rem] p-4 overflow-y-auto">
                         <div className={tableOpen ? "hidden" : "block flex flex-col gap-y-2 "}>
                             {isLoading ? ([...Array(3)].map((_, i) => (<Skeleton key={i} className="h-[74px] w-full" />))) : (
-                                tables.length === 0 ? (<div className="flex justify-center items-center h-full min-h-[200px]"><span className="text-neutral-500">No tables found!</span></div>) : tables.map((table, index) => (
-                                    <div key={table._id} className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] bg-neutral-300 p-6 items-center" onClick={() => { setTableId(table._id); setTableOpen(true) }}>
-                                        <span className="text-sm text-neutral-900">{index + 1}.</span>
-                                        {table.name}
-                                    </div>
-                                ))
+                                tables.length === 0 ? (<div className="flex justify-center items-center h-full min-h-[200px]"><span className="text-neutral-500">No tables found!</span></div>) : tables.map((table, index) => {
+                                    // Fetch count dynamically
+                                    const count = table.itemCount ?? table.items?.length ?? '?';
+
+                                    return (
+                                        <div
+                                            key={table._id}
+                                            className="cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row justify-between border border-neutral-800 rounded-[0.625rem] bg-neutral-300 p-6 items-center"
+                                            onClick={() => { setTableId(table._id); setTableOpen(true) }}
+                                        >
+                                            <div className="flex gap-x-4 items-center">
+                                                <span className="text-sm text-neutral-900">{index + 1}.</span>
+                                                <span className="font-medium text-neutral-900">{table.name}</span>
+                                            </div>
+                                            <span className="text-xs px-2 py-1 rounded-full bg-neutral-400/50 text-neutral-800">
+                                                {count} items
+                                            </span>
+                                        </div>
+                                    )
+                                })
                             )}
                         </div>
                         <div className={tableOpen ? "block flex flex-col gap-y-2 " : "hidden"}>
@@ -196,7 +212,7 @@ export default function AddTile({ onSaveSuccess, isLimitReached }: AddTileProps)
                                     return (
                                         <div key={item._id} className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] ${isItemSelected ? "bg-linear-to-t from-sky-500 to-indigo-500 text-foreground" : "bg-neutral-300 border border-neutral-800"} p-6 items-center`} onClick={() => isItemSelected ? setSelectedItems(selectedItems.filter((sel) => sel._id !== item._id)) : setSelectedItems([...selectedItems, { _id: item._id, tableId: item.tableId }])}>
                                             <span className={`text-sm ${isItemSelected ? "text-foreground" : "text-neutral-900"}`}>{index + 1}.</span>
-                                            {item.name}
+                                            <span className={`font-medium ${isItemSelected ? "text-foreground" : "text-neutral-900"}`}>{item.name}</span>
                                         </div>
                                     )
                                 })

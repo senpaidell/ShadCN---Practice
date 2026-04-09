@@ -73,11 +73,15 @@ export function PieChartComponent() {
         enabled: !!selectedTableId
     });
 
-    const { chartData, stats } = useMemo(() => {
+    // UPDATED LOGIC: We now track the specific "worst" item for the bottom text
+    const { chartData, stats, worstCritical, worstLow } = useMemo(() => {
         let critical = 0;
         let runningLow = 0;
         let healthy = 0;
         let overstock = 0;
+
+        let worstCriticalItem = { name: "", percent: Infinity };
+        let worstLowItem = { name: "", percent: Infinity };
 
         if (tableItems && tableItems.length > 0) {
             tableItems.forEach((item: any) => {
@@ -90,10 +94,22 @@ export function PieChartComponent() {
                 }
 
                 const percent = (stock / par) * 100;
-                if (percent < 20) critical++;
-                else if (percent < 50) runningLow++;
-                else if (percent <= 100) healthy++;
-                else overstock++;
+
+                if (percent < 20) {
+                    critical++;
+                    if (percent < worstCriticalItem.percent) {
+                        worstCriticalItem = { name: item.name, percent };
+                    }
+                } else if (percent < 50) {
+                    runningLow++;
+                    if (percent < worstLowItem.percent) {
+                        worstLowItem = { name: item.name, percent };
+                    }
+                } else if (percent <= 100) {
+                    healthy++;
+                } else {
+                    overstock++;
+                }
             });
         }
 
@@ -106,7 +122,9 @@ export function PieChartComponent() {
 
         return {
             chartData: data,
-            stats: { critical, runningLow, healthy, overstock }
+            stats: { critical, runningLow, healthy, overstock },
+            worstCritical: worstCriticalItem.name ? worstCriticalItem : null,
+            worstLow: worstLowItem.name ? worstLowItem : null
         };
     }, [tableItems]);
 
@@ -134,6 +152,7 @@ export function PieChartComponent() {
     const currentTable = tables?.find((t: any) => t._id === selectedTableId);
     const currentTableName = isTablesLoading ? "Loading..." : (currentTable?.name || "None Selected");
 
+    // UPDATED LOGIC: Dynamic text injection based on worst offenders
     let StatusIcon = CheckCircle2;
     let iconColor = "text-green-500";
     let statusText = "Inventory is at healthy levels.";
@@ -146,14 +165,18 @@ export function PieChartComponent() {
         StatusIcon = Info;
         iconColor = "text-neutral-500";
         statusText = "No tables selected yet.";
-    } else if (stats.critical > 0) {
+    } else if (stats.critical > 0 && worstCritical) {
         StatusIcon = AlertCircle;
         iconColor = "text-red-500";
-        statusText = `${stats.critical} items are critical (below 20%).`;
-    } else if (stats.runningLow > 0) {
+        const others = stats.critical - 1;
+        const othersText = others > 0 ? ` (+${others} more)` : "";
+        statusText = `Critical: ${worstCritical.name} is at ${Math.round(worstCritical.percent)}% of par goal${othersText}.`;
+    } else if (stats.runningLow > 0 && worstLow) {
         StatusIcon = AlertTriangle;
         iconColor = "text-orange-500";
-        statusText = `${stats.runningLow} items are running low.`;
+        const others = stats.runningLow - 1;
+        const othersText = others > 0 ? ` (+${others} more)` : "";
+        statusText = `Action needed: ${worstLow.name} is running low (${Math.round(worstLow.percent)}%)${othersText}.`;
     } else if (stats.overstock > 0 && stats.healthy === 0) {
         StatusIcon = PackagePlus;
         iconColor = "text-blue-500";
