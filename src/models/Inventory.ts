@@ -40,6 +40,13 @@ import { z } from "zod";
 // export const InventoryTable = mongoose.model<IInventoryTableModel>("InventoryTable", InventoryTableSchema)
 
 // Updated Zod Schema
+
+export interface IInventoryTable extends Document {
+  user: mongoose.Types.ObjectId | string;
+  name: string;
+  attributes: Array<{ name: string; dataType: string }>;
+}
+
 export const InventoryTableSchemaZod = z.object({
   name: z.string().min(2),
   attributes: z.array(z.object({
@@ -59,8 +66,8 @@ const InventoryTableSchema = new Schema({
   name: { type: String, required: true },
   attributes: [{
     name: { type: String, required: true },
-    dataType: { type: String, required: true } 
+    dataType: { type: String, required: true }
   }]
 }, { timestamps: true });
 
-export const InventoryTable = mongoose.models.InventoryTable ||mongoose.model("InventoryTable", InventoryTableSchema);
+export const InventoryTable = mongoose.models.InventoryTable || mongoose.model("InventoryTable", InventoryTableSchema);

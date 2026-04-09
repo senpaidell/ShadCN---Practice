@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { Pie, PieChart, Cell } from "recharts";
+import { Pie, PieChart, Cell, Legend } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import EditIcon from '@mui/icons-material/Edit';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, PackagePlus } from "lucide-react";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import {
@@ -23,9 +23,9 @@ export const description = "A dynamic pie chart showing inventory health";
 export function PieChartComponent() {
     const [open, setOpen] = useState(false);
 
-    // FIX: Ensure we don't accidentally load the string "null" from local storage
     const [selectedTableId, setSelectedTableId] = useState<string | null>(() => {
         const saved = localStorage.getItem("preferredPieChartTable");
+        if (saved === "none") return null;
         return saved && saved !== "null" ? saved : null;
     });
 
@@ -48,12 +48,13 @@ export function PieChartComponent() {
     });
 
     useEffect(() => {
-        if (tables && tables.length > 0 && !selectedTableId) {
+        const saved = localStorage.getItem("preferredPieChartTable");
+        if (tables && tables.length > 0 && !saved) {
             const firstTableId = tables[0]._id;
             setSelectedTableId(firstTableId);
             localStorage.setItem("preferredPieChartTable", firstTableId);
         }
-    }, [tables, selectedTableId]);
+    }, [tables]);
 
     const { data: tableItems, isLoading } = useQuery({
         queryKey: ["tableItems", selectedTableId],
@@ -73,67 +74,69 @@ export function PieChartComponent() {
     });
 
     const { chartData, stats } = useMemo(() => {
-        let outOfStock = 0;
         let critical = 0;
         let runningLow = 0;
         let healthy = 0;
+        let overstock = 0;
 
         if (tableItems && tableItems.length > 0) {
             tableItems.forEach((item: any) => {
                 const stock = item.currentStock !== undefined ? item.currentStock : (item.inStock || 0);
                 const par = item.parLevel || 0;
 
-                if (stock === 0) {
-                    outOfStock++;
-                } else if (par > 0) {
-                    const percent = (stock / par) * 100;
-                    if (percent < 50) critical++;
-                    else if (percent < 100) runningLow++;
-                    else healthy++;
-                } else {
+                if (par === 0) {
                     healthy++;
+                    return;
                 }
+
+                const percent = (stock / par) * 100;
+                if (percent < 20) critical++;
+                else if (percent < 50) runningLow++;
+                else if (percent <= 100) healthy++;
+                else overstock++;
             });
         }
 
-        const data = [];
-        if (outOfStock > 0) data.push({ name: "Out of Stock", amount: outOfStock, fill: "#EF4444" });
-        if (critical > 0) data.push({ name: "Critical (<50%)", amount: critical, fill: "#F97316" });
-        if (runningLow > 0) data.push({ name: "Running Low (<100%)", amount: runningLow, fill: "#EAB308" });
-        if (healthy > 0) data.push({ name: "Healthy (100%+)", amount: healthy, fill: "#22C55E" });
+        const data = [
+            { name: "Critical (<20%)", amount: critical, fill: "#EF4444" },
+            { name: "Running Low (<50%)", amount: runningLow, fill: "#F97316" },
+            { name: "Healthy (50-100%)", amount: healthy, fill: "#22C55E" },
+            { name: "Overstock (>100%)", amount: overstock, fill: "#3B82F6" },
+        ].filter(d => d.amount > 0);
 
         return {
             chartData: data,
-            stats: { outOfStock, critical, runningLow, healthy }
+            stats: { critical, runningLow, healthy, overstock }
         };
     }, [tableItems]);
 
-    const chartConfig = useMemo(() => {
-        return {
-            amount: { label: "Items" },
-            "Out of Stock": { label: "Out of Stock", color: "#EF4444" },
-            "Critical (<50%)": { label: "Critical", color: "#F97316" },
-            "Running Low (<100%)": { label: "Running Low", color: "#EAB308" },
-            "Healthy (100%+)": { label: "Healthy", color: "#22C55E" },
-        } satisfies ChartConfig;
-    }, []);
+    const chartConfig = {
+        amount: { label: "Items" },
+    } satisfies ChartConfig;
 
     const handleSaveChanges = () => {
+        setSelectedTableId(tempTableId);
         if (tempTableId) {
-            setSelectedTableId(tempTableId);
             localStorage.setItem("preferredPieChartTable", tempTableId);
+        } else {
+            localStorage.setItem("preferredPieChartTable", "none");
         }
         setOpen(false);
     };
 
-    // FIX: Safely check if the selected table actually exists in the database
+    const handleClearSelection = () => {
+        setTempTableId(null);
+        setSelectedTableId(null);
+        localStorage.setItem("preferredPieChartTable", "none");
+        setOpen(false);
+    };
+
     const currentTable = tables?.find((t: any) => t._id === selectedTableId);
     const currentTableName = isTablesLoading ? "Loading..." : (currentTable?.name || "None Selected");
 
-    // FIX: Bulletproof logic for the bottom status text
     let StatusIcon = CheckCircle2;
     let iconColor = "text-green-500";
-    let statusText = "All items are at healthy stock levels.";
+    let statusText = "Inventory is at healthy levels.";
 
     if (isTablesLoading) {
         StatusIcon = Info;
@@ -143,18 +146,18 @@ export function PieChartComponent() {
         StatusIcon = Info;
         iconColor = "text-neutral-500";
         statusText = "No tables selected yet.";
-    } else if (stats.outOfStock > 0) {
+    } else if (stats.critical > 0) {
         StatusIcon = AlertCircle;
         iconColor = "text-red-500";
-        statusText = `Attention: ${stats.outOfStock} item(s) are completely out of stock.`;
-    } else if (stats.critical > 0) {
+        statusText = `${stats.critical} items are critical (below 20%).`;
+    } else if (stats.runningLow > 0) {
         StatusIcon = AlertTriangle;
         iconColor = "text-orange-500";
-        statusText = `${stats.critical} item(s) are at critically low levels.`;
-    } else if (stats.runningLow > 0) {
-        StatusIcon = Info;
-        iconColor = "text-yellow-500";
-        statusText = `${stats.runningLow} item(s) are running below par level.`;
+        statusText = `${stats.runningLow} items are running low.`;
+    } else if (stats.overstock > 0 && stats.healthy === 0) {
+        StatusIcon = PackagePlus;
+        iconColor = "text-blue-500";
+        statusText = `Note: ${stats.overstock} items are overstocked.`;
     } else if (!tableItems || tableItems.length === 0) {
         StatusIcon = Info;
         iconColor = "text-neutral-500";
@@ -201,17 +204,24 @@ export function PieChartComponent() {
                                 ) : (
                                     tables?.map((table: any, index: number) => {
                                         const isSelected = tempTableId === table._id;
+                                        const count = table.itemCount ?? table.items?.length ?? '?';
+
                                         return (
                                             <div
                                                 key={table._id}
-                                                className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] p-6 items-center ${isSelected
+                                                className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row justify-between border border-neutral-800 rounded-[0.625rem] p-6 items-center ${isSelected
                                                     ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white"
                                                     : "bg-neutral-300 text-neutral-900"
                                                     }`}
                                                 onClick={() => setTempTableId(table._id)}
                                             >
-                                                <span className={`text-sm ${isSelected ? "text-white" : "text-neutral-900"}`}>{index + 1}.</span>
-                                                <span className="font-medium">{table.name}</span>
+                                                <div className="flex gap-x-4 items-center">
+                                                    <span className={`text-sm ${isSelected ? "text-white" : "text-neutral-900"}`}>{index + 1}.</span>
+                                                    <span className="font-medium">{table.name}</span>
+                                                </div>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${isSelected ? "bg-white/20 text-white" : "bg-neutral-400/30 text-neutral-700"}`}>
+                                                    {count} items
+                                                </span>
                                             </div>
                                         );
                                     })
@@ -219,11 +229,21 @@ export function PieChartComponent() {
                             </div>
                         </div>
 
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline" className="cursor-pointer">Cancel</Button>
-                            </DialogClose>
-                            <Button type="button" className="cursor-pointer" onClick={handleSaveChanges}>Save changes</Button>
+                        <DialogFooter className="flex w-full sm:justify-between items-center mt-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                onClick={handleClearSelection}
+                            >
+                                Clear Selection
+                            </Button>
+                            <div className="flex gap-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline" className="cursor-pointer">Cancel</Button>
+                                </DialogClose>
+                                <Button type="button" className="cursor-pointer" onClick={handleSaveChanges}>Save changes</Button>
+                            </div>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -231,19 +251,19 @@ export function PieChartComponent() {
 
             <CardContent className="flex-1 pb-4 mt-4">
                 {isLoading || isTablesLoading ? (
-                    <div className="h-full flex items-center justify-center">
-                        <Skeleton className="h-[200px] w-[200px] rounded-full bg-neutral-800" />
+                    <div className="mx-auto flex items-center justify-center aspect-square max-h-[300px] w-full">
+                        <Skeleton className="h-[250px] w-[250px] rounded-full bg-neutral-800/50" />
                     </div>
                 ) : !currentTable ? (
-                    <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+                    <div className="mx-auto flex items-center justify-center aspect-square max-h-[300px] w-full text-neutral-500 text-sm">
                         Please select a table to view data.
                     </div>
                 ) : chartData.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+                    <div className="mx-auto flex items-center justify-center aspect-square max-h-[300px] w-full text-neutral-500 text-sm">
                         No active stock found in this table.
                     </div>
                 ) : (
-                    <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
+                    <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
                         <PieChart>
                             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                             <Pie data={chartData} dataKey="amount" nameKey="name" innerRadius={60} strokeWidth={2}>
@@ -251,6 +271,12 @@ export function PieChartComponent() {
                                     <Cell key={`cell-${index}`} fill={entry.fill} />
                                 ))}
                             </Pie>
+                            <Legend
+                                layout="horizontal"
+                                verticalAlign="bottom"
+                                align="center"
+                                wrapperStyle={{ paddingTop: "20px" }}
+                            />
                         </PieChart>
                     </ChartContainer>
                 )}
