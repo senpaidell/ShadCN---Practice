@@ -23,9 +23,9 @@ export const description = "A bar chart showing Current Stock vs Par Level"
 export function ToolTipCosh() {
     const [open, setOpen] = useState(false);
 
-    // FIX: Ensure we don't accidentally load the string "null" from local storage
     const [selectedTableId, setSelectedTableId] = useState<string | null>(() => {
         const saved = localStorage.getItem("preferredBarChartTable");
+        if (saved === "none") return null;
         return saved && saved !== "null" ? saved : null;
     });
 
@@ -48,12 +48,13 @@ export function ToolTipCosh() {
     });
 
     useEffect(() => {
-        if (tables && tables.length > 0 && !selectedTableId) {
+        const saved = localStorage.getItem("preferredBarChartTable");
+        if (tables && tables.length > 0 && !saved) {
             const firstTableId = tables[0]._id;
             setSelectedTableId(firstTableId);
             localStorage.setItem("preferredBarChartTable", firstTableId);
         }
-    }, [tables, selectedTableId]);
+    }, [tables]);
 
     const { data: tableItems, isLoading } = useQuery({
         queryKey: ["tableItems", selectedTableId],
@@ -99,18 +100,25 @@ export function ToolTipCosh() {
     } satisfies ChartConfig;
 
     const handleSaveChanges = () => {
+        setSelectedTableId(tempTableId);
         if (tempTableId) {
-            setSelectedTableId(tempTableId);
             localStorage.setItem("preferredBarChartTable", tempTableId);
+        } else {
+            localStorage.setItem("preferredBarChartTable", "none");
         }
         setOpen(false);
     };
 
-    // FIX: Safely check if the selected table actually exists in the database
+    const handleClearSelection = () => {
+        setTempTableId(null);
+        setSelectedTableId(null);
+        localStorage.setItem("preferredBarChartTable", "none");
+        setOpen(false);
+    };
+
     const currentTable = tables?.find((t: any) => t._id === selectedTableId);
     const currentTableName = isTablesLoading ? "Loading..." : (currentTable?.name || "None Selected");
 
-    // FIX: Bulletproof logic for the bottom status text
     let StatusIcon = CheckCircle2;
     let iconColor = "text-green-500";
     let statusText = "No critical restock needs at the moment.";
@@ -125,10 +133,18 @@ export function ToolTipCosh() {
         statusText = "No tables selected yet.";
     } else if (chartData.length > 0) {
         const worstOffender = chartData[0];
-        if (worstOffender.percent < 100) {
+        if (worstOffender.percent < 20) {
             StatusIcon = TrendingDown;
             iconColor = "text-red-500";
-            statusText = `Action needed: ${worstOffender.item} is at ${Math.round(worstOffender.percent)}% of par goal.`;
+            statusText = `Critical: ${worstOffender.item} is at ${Math.round(worstOffender.percent)}% of par goal.`;
+        } else if (worstOffender.percent < 50) {
+            StatusIcon = TrendingDown;
+            iconColor = "text-orange-500";
+            statusText = `Action needed: ${worstOffender.item} is running low (${Math.round(worstOffender.percent)}%).`;
+        } else if (worstOffender.percent < 100) {
+            StatusIcon = Info;
+            iconColor = "text-yellow-500";
+            statusText = `${worstOffender.item} is slightly below par goal (${Math.round(worstOffender.percent)}%).`;
         }
     } else if (!tableItems || tableItems.length === 0) {
         StatusIcon = Info;
@@ -176,17 +192,24 @@ export function ToolTipCosh() {
                                 ) : (
                                     tables?.map((table: any, index: number) => {
                                         const isSelected = tempTableId === table._id;
+                                        const count = table.itemCount ?? table.items?.length ?? '?';
+
                                         return (
                                             <div
                                                 key={table._id}
-                                                className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row gap-x-4 border border-neutral-800 rounded-[0.625rem] p-6 items-center ${isSelected
+                                                className={`cursor-pointer hover:brightness-125 transition duration-200 ease-in-out flex flex-row justify-between border border-neutral-800 rounded-[0.625rem] p-6 items-center ${isSelected
                                                     ? "bg-linear-to-t from-sky-500 to-indigo-500 text-white"
                                                     : "bg-neutral-300 text-neutral-900"
                                                     }`}
                                                 onClick={() => setTempTableId(table._id)}
                                             >
-                                                <span className={`text-sm ${isSelected ? "text-white" : "text-neutral-900"}`}>{index + 1}.</span>
-                                                <span className="font-medium">{table.name}</span>
+                                                <div className="flex gap-x-4 items-center">
+                                                    <span className={`text-sm ${isSelected ? "text-white" : "text-neutral-900"}`}>{index + 1}.</span>
+                                                    <span className="font-medium">{table.name}</span>
+                                                </div>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${isSelected ? "bg-white/20 text-white" : "bg-neutral-400/30 text-neutral-700"}`}>
+                                                    {count} items
+                                                </span>
                                             </div>
                                         );
                                     })
@@ -194,11 +217,21 @@ export function ToolTipCosh() {
                             </div>
                         </div>
 
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline" className="cursor-pointer">Cancel</Button>
-                            </DialogClose>
-                            <Button type="button" className="cursor-pointer" onClick={handleSaveChanges}>Save changes</Button>
+                        <DialogFooter className="flex w-full sm:justify-between items-center mt-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                onClick={handleClearSelection}
+                            >
+                                Clear Selection
+                            </Button>
+                            <div className="flex gap-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline" className="cursor-pointer">Cancel</Button>
+                                </DialogClose>
+                                <Button type="button" className="cursor-pointer" onClick={handleSaveChanges}>Save changes</Button>
+                            </div>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -206,17 +239,17 @@ export function ToolTipCosh() {
 
             <CardContent className="flex-1 pb-4 mt-8">
                 {isLoading || isTablesLoading ? (
-                    <div className="h-[200px] w-full flex items-end gap-2">
+                    <div className="mx-auto h-[250px] w-full flex items-end gap-2">
                         {[...Array(5)].map((_, i) => (
-                            <Skeleton key={i} className="w-full bg-neutral-800" style={{ height: `${Math.random() * 80 + 20}%` }} />
+                            <Skeleton key={i} className="w-full bg-neutral-800/50" style={{ height: `${Math.random() * 80 + 20}%` }} />
                         ))}
                     </div>
                 ) : !currentTable ? (
-                    <div className="h-full flex flex-col items-center justify-center text-neutral-500 text-sm">
+                    <div className="mx-auto flex flex-col items-center justify-center h-[250px] w-full text-neutral-500 text-sm">
                         Please select a table to view data.
                     </div>
                 ) : chartData.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-neutral-500 text-sm">
+                    <div className="mx-auto flex flex-col items-center justify-center h-[250px] w-full text-neutral-500 text-sm">
                         <p>No critical items found.</p>
                         <p className="text-xs mt-1">(Or items are missing Par Levels)</p>
                     </div>
@@ -226,7 +259,14 @@ export function ToolTipCosh() {
                             <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
                             <XAxis dataKey="item" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.length > 8 ? `${value.substring(0, 8)}...` : value} />
                             <ChartTooltip content={<ChartTooltipContent indicator="dashed" />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                            <Legend verticalAlign="top" height={36} />
+
+                            <Legend
+                                verticalAlign="top"
+                                align="right"
+                                iconType="circle"
+                                wrapperStyle={{ paddingBottom: "20px" }}
+                            />
+
                             <Bar dataKey="parLevel" fill="var(--color-parLevel)" radius={[4, 4, 0, 0]} name="Par Goal" />
                             <Bar dataKey="currentStock" fill="var(--color-currentStock)" radius={[4, 4, 0, 0]} name="Current Stock" />
                         </BarChart>
