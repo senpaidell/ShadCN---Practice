@@ -86,10 +86,15 @@ export const createColumns = (
 
             let rowStockStatus = "Good";
             const current = row.original.currentStock || 0;
-            const par = row.original.parLevel || 1;
-            const percentage = Math.round((current / par) * 100);
-            if (percentage < 50) rowStockStatus = "Low";
-            else if (percentage > 110) rowStockStatus = "Over";
+            const par = row.original.parLevel;
+
+            if (!par || par === 0) {
+                rowStockStatus = "No Par Level";
+            } else {
+                const percentage = Math.round((current / par) * 100);
+                if (percentage < 50) rowStockStatus = "Low";
+                else if (percentage > 110) rowStockStatus = "Over";
+            }
 
             let rowExpStatus = "Valid";
             const expirationDate = row.original.expiration;
@@ -108,18 +113,31 @@ export const createColumns = (
         },
         cell: ({ row }) => {
             const current = row.original.currentStock || 0;
-            const par = row.original.parLevel || 1;
-            const percentage = Math.round((current / par) * 100);
+            const par = row.original.parLevel;
 
-            let stockColorClass = "text-green-500 bg-green-500/10 border-green-500/20";
-            let stockLabel = "Good";
+            let stockColorClass = "";
+            let stockLabel = "";
+            let percentage: number | null = null;
+            let isNoPar = false;
 
-            if (percentage < 50) {
-                stockColorClass = "text-red-500 bg-red-500/10 border-red-500/20";
-                stockLabel = "Low";
-            } else if (percentage > 110) {
-                stockColorClass = "text-blue-500 bg-blue-500/10 border-blue-500/20";
-                stockLabel = "Over";
+
+            if (!par || par === 0) {
+                isNoPar = true;
+                stockLabel = "No Par Level";
+                stockColorClass = "text-neutral-200 bg-neutral-600 border-black";
+            } else {
+                percentage = Math.round((current / par) * 100);
+
+                if (percentage < 50) {
+                    stockColorClass = "text-red-500 bg-red-500/10 border-red-500/20";
+                    stockLabel = "Low";
+                } else if (percentage > 110) {
+                    stockColorClass = "text-blue-500 bg-blue-500/10 border-blue-500/20";
+                    stockLabel = "Over";
+                } else {
+                    stockColorClass = "text-green-500 bg-green-500/10 border-green-500/20";
+                    stockLabel = "Good";
+                }
             }
 
             const expirationDate = row.original.expiration;
