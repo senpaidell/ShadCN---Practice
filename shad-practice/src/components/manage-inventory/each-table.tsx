@@ -27,10 +27,12 @@ import { DataTableSkeleton } from "./data-table/data-table-skeleton";
 import { AddItem } from "./inventory-buttons/add-item";
 import { FilterItem } from "./inventory-buttons/filter-item";
 import { TableSelector } from "./inventory-buttons/table-selector";
+import { useLogAudit } from "@/hooks/useLogAudit";
 
 export default function EachTable() {
     const { id } = useParams();
     const queryClient = useQueryClient();
+    const logAudit = useLogAudit();
     const token = localStorage.getItem("token");
 
     const [tableInstance, setTableInstance] = useState<any>(null);
@@ -156,6 +158,31 @@ export default function EachTable() {
                 oldData.map((r: any) => (r._id === updatedItem._id ? updatedItem : r)),
             );
             toast.success("Item updated successfully.");
+
+            // NEW: Figure out exactly what was changed
+            let oldVals: string[] = [];
+            let newVals: string[] = [];
+
+            // Loop through the form data to find differences
+            Object.keys(editFormData).forEach((key) => {
+                if (editFormData[key] !== editingItem[key] && editingItem[key] !== undefined) {
+                    oldVals.push(`${key}: ${editingItem[key]}`);
+                    newVals.push(`${key}: ${editFormData[key]}`);
+                }
+            });
+
+            // If something actually changed, log it!
+            if (oldVals.length > 0) {
+                logAudit.mutate({
+                    targetName: editingItem.name,
+                    tableName: tableData.name,
+                    activity: "Item edited",
+                    changes: {
+                        oldValue: oldVals.join(" | "),
+                        newValue: newVals.join(" | ")
+                    }
+                });
+            }
             setIsEditModalOpen(false);
         },
         onError: () => toast.error("Failed to update item."),
@@ -178,6 +205,11 @@ export default function EachTable() {
                 oldData.filter((r: any) => r._id !== deletedId),
             );
             toast.success("Item deleted successfully.");
+            logAudit.mutate({
+                targetName: deletingItem.name,
+                tableName: tableData.name,
+                activity: "Item deleted"
+            });
             setIsDeleteModalOpen(false);
         },
         onError: () => toast.error("Failed to delete the item."),
@@ -205,6 +237,14 @@ export default function EachTable() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["items", id] });
             toast.success("Stock updated successfully.");
+            logAudit.mutate({
+                targetName: stockItem.name,
+                tableName: tableData.name,
+                activity: actionType === "in" ? "Item Added" : "Item Subtracted",
+                changes: actionType === "in"
+                    ? { added: Number(quantity), field: "Stock" }
+                    : { subtracted: Number(quantity), field: "Stock" }
+            });
             setIsStockModalOpen(false);
         },
         onError: () => toast.error("Failed to update stock."),
@@ -539,8 +579,8 @@ export default function EachTable() {
                                 <button
                                     onClick={() => setActionType("in")}
                                     className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "in"
-                                            ? "bg-white text-black shadow-sm border border-gray-200"
-                                            : "text-gray-500 hover:text-black"
+                                        ? "bg-white text-black shadow-sm border border-gray-200"
+                                        : "text-gray-500 hover:text-black"
                                         }`}
                                 >
                                     Stock In
@@ -548,8 +588,8 @@ export default function EachTable() {
                                 <button
                                     onClick={() => setActionType("out")}
                                     className={`flex-1 py-2 text-sm font-medium rounded-sm transition-all ${actionType === "out"
-                                            ? "bg-white text-black shadow-sm border border-gray-200"
-                                            : "text-gray-500 hover:text-black"
+                                        ? "bg-white text-black shadow-sm border border-gray-200"
+                                        : "text-gray-500 hover:text-black"
                                         }`}
                                 >
                                     Stock Out

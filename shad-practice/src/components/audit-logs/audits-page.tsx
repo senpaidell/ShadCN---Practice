@@ -25,6 +25,8 @@ interface AuditLog {
     added?: number;
     subtracted?: number;
     field?: string;
+    oldValue?: string; // NEW
+    newValue?: string; // NEW
   };
 }
 
@@ -173,19 +175,32 @@ export default function AuditLogsPage() {
                   {log.activity}
                 </span>
 
-                {/* NEW: Added / Subtracted Values Display */}
+                {/* DYNAMIC CHANGES BADGES */}
                 {log.changes && (
                   <div className="flex items-center gap-2 shrink-0 mt-1 md:mt-0">
+
+                    {/* 1. Displays if stock was ADDED */}
                     {log.changes.added !== undefined && log.changes.added > 0 && (
                       <span className="text-xs font-bold text-green-700 bg-green-500/20 border border-green-500/30 px-2 py-1 rounded-md">
                         +{log.changes.added} {log.changes.field}
                       </span>
                     )}
+
+                    {/* 2. Displays if stock was SUBTRACTED */}
                     {log.changes.subtracted !== undefined && log.changes.subtracted > 0 && (
                       <span className="text-xs font-bold text-red-700 bg-red-500/20 border border-red-500/30 px-2 py-1 rounded-md">
                         -{log.changes.subtracted} {log.changes.field}
                       </span>
                     )}
+
+                    {/* 3. NEW: Displays if an item was EDITED */}
+                    {log.changes.oldValue && log.changes.newValue && (
+                      <span className="text-xs font-medium text-blue-700 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-md flex flex-wrap items-center gap-x-2">
+                        <span className="line-through opacity-60">{log.changes.oldValue}</span>
+                        <span className="font-bold">➔ {log.changes.newValue}</span>
+                      </span>
+                    )}
+
                   </div>
                 )}
               </div>

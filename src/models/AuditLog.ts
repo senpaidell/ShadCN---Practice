@@ -10,6 +10,8 @@ interface IAuditLog extends Document {
         added?: number;
         subtracted?: number;
         field?: string;
+        oldValue?: string; // NEW
+        newValue?: string; // NEW
     };
     createdAt: Date;
     updatedAt: Date;
@@ -36,7 +38,9 @@ const AuditLogSchema = new Schema<IAuditLog>({
     changes: {
         added: { type: Number },
         subtracted: { type: Number },
-        field: { type: String }
+        field: { type: String },
+        oldValue: { type: String }, // NEW
+        newValue: { type: String }
     }
 },
     {

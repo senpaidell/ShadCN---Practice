@@ -3,7 +3,15 @@ import { useMutation } from "@tanstack/react-query";
 interface AuditPayload {
     targetName: string;
     tableName?: string;
-    activity: "Item deleted" | "Item edited" | "Item Added" | "Item Subtracted" | "New Item";
+    activity: string; // Broadened slightly to accept any string like "Stock Updated" or the specific ones below
+    // NEW: Tell TypeScript to expect the changes object
+    changes?: {
+        added?: number;
+        subtracted?: number;
+        field?: string;
+        oldValue?: string; // NEW
+        newValue?: string;
+    };
 }
 
 export function useLogAudit() {
