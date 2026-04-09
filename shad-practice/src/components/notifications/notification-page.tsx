@@ -20,7 +20,7 @@ function NotificationCard({ number, alert }: { number: string; alert: any }) {
     : "Unknown time";
 
   return (
-    <Link to={`/table/${alert.tableId}`} className="block">
+    <Link to={`/table/${alert.tableId}?highlight=${alert.itemId}`} className="block">
       <div className="flex items-center justify-between p-4 mb-2 border border-neutral-800 rounded-[0.625rem] bg-neutral-200 hover:brightness-125 hover:border-neutral-800 transition duration-200 ease-in-out cursor-pointer">
 
         <div className="flex items-center">
@@ -103,6 +103,7 @@ export default function Notification() {
 
       alerts.push({
         id: `${item._id}-stock`,
+        itemId: item._id,
         type: "Stock",
         severity,
         message: label,
@@ -140,6 +141,7 @@ export default function Notification() {
         alerts.push({
           id: `${item._id}-expiration`,
           type: "Expiration",
+          itemId: item._id,
           severity,
           message: label,
           tableName,

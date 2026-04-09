@@ -249,7 +249,7 @@ function SearchResults({ results, isLoading, searchTerm, navigate, closeSearch, 
                         <div
                             key={item._id}
                             onClick={() => {
-                                navigate(`/table/${item.tableId?._id || item.tableId}`);
+                                navigate(`/table/${item.tableId?._id || item.tableId}?highlight=${item._id}`);
                                 closeSearch();
                             }}
                             className="flex items-center justify-between px-4 py-3 hover:bg-neutral-100 cursor-pointer transition-colors border-b border-neutral-100 last:border-0"
