@@ -6,31 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchData } from "@/lib/api"; //
+import { fetchData } from "@/lib/api";
 
 export default function ProfilePage() {
     const queryClient = useQueryClient();
 
-    // States for form fields
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
         email: ""
     });
-    const [currentPassword, setCurrentPassword] = useState("");
+
+    const [resetStep, setResetStep] = useState<"idle" | "verify">("idle");
+    const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
-
-    // Loading states
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [isProcessingReset, setIsProcessingReset] = useState(false);
 
-    // Fetch User Data
     const { data: user, isLoading: isUserLoading } = useQuery({
         queryKey: ["users"],
         queryFn: () => fetchData("/api/users/getusers"),
     });
 
-    // Sync form data when user data is loaded
     useEffect(() => {
         if (user) {
             setFormData({
@@ -41,13 +38,15 @@ export default function ProfilePage() {
         }
     }, [user]);
 
-    // Handle Profile Update (Name/Email)
     const handleUpdateProfile = async () => {
         setIsUpdatingProfile(true);
         try {
             await fetchData("/api/users/update-profile", {
                 method: "PUT",
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    firstName: formData.firstName,
+                    lastName: formData.lastName
+                }),
             });
             alert("Profile updated successfully!");
             queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -58,35 +57,49 @@ export default function ProfilePage() {
         }
     };
 
-    // Handle Password Change
-    const handlePasswordChange = async () => {
-        if (!currentPassword || !newPassword) {
-            alert("Please fill in both password fields.");
-            return;
-        }
-        setIsUpdatingPassword(true);
+    const handleRequestOTP = async () => {
+        setIsProcessingReset(true);
         try {
-            await fetchData("/api/users/change-password", {
+            // Changed URL to the new secure route. 
+            // We removed the body payload because the backend already knows the user's email from the token!
+            await fetchData("/api/users/request-password-change", {
+                method: "POST"
+            });
+            alert(`OTP sent to your email`);
+            setResetStep("verify");
+        } catch (error: any) {
+            alert(error.message || "Failed to send OTP");
+        } finally {
+            setIsProcessingReset(false);
+        }
+    };
+
+    const handleFinalReset = async () => {
+        if (!otp || !newPassword) return alert("Please fill in all fields");
+
+        setIsProcessingReset(true);
+        try {
+            // Changed URL to the new secure route.
+            // Removed email from the payload, again, because the backend gets it from the token.
+            await fetchData("/api/users/verify-password-change", {
                 method: "POST",
                 body: JSON.stringify({
-                    email: user?.email,
-                    currentPassword,
-                    newPassword,
+                    otp,
+                    newPassword
                 }),
             });
-            alert("Password updated successfully!");
-            setCurrentPassword("");
+            alert("Password changed successfully!");
+            setResetStep("idle");
+            setOtp("");
             setNewPassword("");
         } catch (error: any) {
-            alert(error.message || "Invalid current password");
+            alert(error.message || "Reset failed. Check your OTP.");
         } finally {
-            setIsUpdatingPassword(false);
+            setIsProcessingReset(false);
         }
     };
 
     const loggedInName = user ? `${user.firstName} ${user.lastName}` : "User";
-
-    console.log(formData.firstName)
 
     return (
         <div className="p-8 w-full space-y-10 text-black">
@@ -94,7 +107,7 @@ export default function ProfilePage() {
                 <h1 className="text-4xl font-bold text-black tracking-tight">COSH Profile Page</h1>
                 <Button
                     onClick={handleUpdateProfile}
-                    disabled={isUpdatingProfile}
+                    disabled={isUpdatingProfile || isUserLoading}
                     className="bg-black hover:bg-slate-800 text-white px-10 py-6 text-lg"
                 >
                     {isUpdatingProfile ? <Loader2 className="mr-2 animate-spin" /> : null}
@@ -126,13 +139,14 @@ export default function ProfilePage() {
                         <CardHeader>
                             <CardTitle className="text-2xl text-black">Personal Details</CardTitle>
                             <CardDescription className="text-slate-600 text-base">
-                                Update your account information for the inventory system.
+                                Manage your account names. Note: Email is managed by the system administrator.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-8 pt-6">
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-b pb-8 border-slate-100">
                                 <div className="space-y-3">
-                                    <Label className="text-lg font-semibold text-black">First Name</Label>
+                                    <span className="text-lg font-semibold text-black">First Name</span>
                                     <Input
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -140,19 +154,10 @@ export default function ProfilePage() {
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <Label className="text-lg font-semibold text-black">Last Name</Label>
+                                    <span className="text-lg font-semibold text-black">Last Name</span>
                                     <Input
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        className="h-14 border-slate-300 text-black text-lg px-4"
-                                    />
-                                </div>
-                                <div className="space-y-3 md:col-span-2">
-                                    <Label className="text-lg font-semibold text-black">Contact Email</Label>
-                                    <Input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         className="h-14 border-slate-300 text-black text-lg px-4"
                                     />
                                 </div>
@@ -160,34 +165,64 @@ export default function ProfilePage() {
 
                             <div className="space-y-6 pt-2">
                                 <h3 className="text-xl font-bold text-black">Security</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-3">
-                                        <Label className="text-lg font-semibold text-black">Current Password</Label>
-                                        <Input
-                                            type="password"
-                                            value={currentPassword}
-                                            onChange={(e) => setCurrentPassword(e.target.value)}
-                                            className="h-14 border-slate-300 px-4"
-                                        />
+
+                                {resetStep === "idle" ? (
+                                    <div className="space-y-4">
+                                        <p className="text-slate-600">
+                                            To change your password, we need to verify your identity via email.
+                                        </p>
+                                        <Button
+                                            onClick={handleRequestOTP}
+                                            disabled={isProcessingReset || isUserLoading}
+                                            variant="outline"
+                                            className="border-black text-black hover:bg-slate-50 flex items-center gap-2 h-12"
+                                        >
+                                            {isProcessingReset && <Loader2 className="animate-spin h-5 w-5" />}
+                                            Change Password
+                                        </Button>
                                     </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-lg font-semibold text-black">New Password</Label>
-                                        <Input
-                                            type="password"
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            className="h-14 border-slate-300 px-4"
-                                        />
+                                ) : (
+                                    <div className="space-y-6 p-6 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in slide-in-from-top-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label className="text-black font-semibold">Verification Code</Label>
+                                                <Input
+                                                    placeholder="Enter 6-digit OTP"
+                                                    value={otp}
+                                                    onChange={(e) => setOtp(e.target.value)}
+                                                    className="bg-white border-slate-300"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-black font-semibold">New Password</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Create new password"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="bg-white border-slate-300"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <Button
+                                                onClick={handleFinalReset}
+                                                disabled={isProcessingReset}
+                                                className="bg-black text-white hover:bg-slate-800"
+                                            >
+                                                {isProcessingReset && <Loader2 className="animate-spin mr-2 h-4 w-4" />}
+                                                Confirm Change
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => setResetStep("idle")}
+                                                className="text-slate-500"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                                <Button
-                                    onClick={handlePasswordChange}
-                                    disabled={isUpdatingPassword}
-                                    variant="outline"
-                                    className="border-black text-black hover:bg-slate-50"
-                                >
-                                    {isUpdatingPassword ? <Loader2 className="animate-spin" /> : "Change Password"}
-                                </Button>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner"; // Imported sonner
 
 // Assets
 import forgotBg from "@/assets/forgot-bg.jpg";
@@ -34,9 +35,6 @@ const CoshAuth: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Toast Notification State
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
   // Form States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,14 +59,6 @@ const CoshAuth: React.FC = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // --- Helper: Show Toast ---
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4000); // Auto-hide after 4 seconds
-  };
 
   // --- Handlers ---
 
@@ -191,8 +181,8 @@ const CoshAuth: React.FC = () => {
       setEmail("");
       setOtp("");
 
-      // Trigger the Toast Notification!
-      showToast("Account successfully created! Please log in.");
+      // Sonner Toast Notification!
+      toast.success("Account successfully created! Please log in.");
 
     } catch (error) {
       console.error("Error on OTP Verification Window", error);
@@ -241,8 +231,8 @@ const CoshAuth: React.FC = () => {
       setConfirmPassword("");
       setOtp("");
 
-      // Optional: Add a toast for password reset too!
-      showToast("Password successfully reset! Please log in.");
+      // Sonner Toast Notification!
+      toast.success("Password successfully reset! Please log in.");
 
     } catch (error) {
       console.error("Error resetting password", error);
@@ -266,20 +256,6 @@ const CoshAuth: React.FC = () => {
 
   return (
     <div style={styles.pageWrapper}>
-
-      {/* TOAST NOTIFICATION */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, x: "-50%" }}
-            animate={{ opacity: 1, y: 20, x: "-50%" }}
-            exit={{ opacity: 0, y: -50, x: "-50%" }}
-            style={styles.toast}
-          >
-            {toastMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* BACKGROUND */}
       {mode !== "signup" && (
@@ -315,9 +291,10 @@ const CoshAuth: React.FC = () => {
                   <input
                     type="email"
                     placeholder="Enter Email"
+                    maxLength={50}
                     style={{
                       ...styles.input,
-                      ...(loginError ? styles.inputError : {}) // Removed success glow here
+                      ...(loginError ? styles.inputError : {})
                     }}
                     value={email}
                     onChange={(e) => {
@@ -334,7 +311,7 @@ const CoshAuth: React.FC = () => {
                     placeholder="Enter Password"
                     style={{
                       ...styles.input,
-                      ...(loginError ? styles.inputError : {}) // Removed success glow here
+                      ...(loginError ? styles.inputError : {})
                     }}
                     value={password}
                     onChange={(e) => {
@@ -389,6 +366,7 @@ const CoshAuth: React.FC = () => {
                       <div style={styles.inputGroup}>
                         <label style={styles.label}>First Name</label>
                         <input
+                          maxLength={30}
                           style={{
                             ...styles.input,
                             ...(errors.firstName ? styles.inputError : (firstName && isFirstNameValid ? styles.inputSuccess : {}))
@@ -407,6 +385,7 @@ const CoshAuth: React.FC = () => {
                       <div style={styles.inputGroup}>
                         <label style={styles.label}>Last Name</label>
                         <input
+                          maxLength={30}
                           style={{
                             ...styles.input,
                             ...(errors.lastName ? styles.inputError : (lastName && isLastNameValid ? styles.inputSuccess : {}))
@@ -426,6 +405,7 @@ const CoshAuth: React.FC = () => {
                         <label style={styles.label}>Email</label>
                         <input
                           type="email"
+                          maxLength={50}
                           style={{
                             ...styles.input,
                             ...(errors.email ? styles.inputError : (email && isEmailValid ? styles.inputSuccess : {}))
@@ -517,7 +497,7 @@ const CoshAuth: React.FC = () => {
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Verification Code</label>
                   <input
-                    style={styles.input} // Removed success glow here
+                    style={styles.input}
                     placeholder="Enter Verification Code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -548,7 +528,8 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>Email</label>
                   <input
                     type="email"
-                    style={styles.input} // Removed success glow here
+                    maxLength={50}
+                    style={styles.input}
                     placeholder="Enter Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value.trim())}
@@ -581,7 +562,7 @@ const CoshAuth: React.FC = () => {
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Verification Code</label>
                   <input
-                    style={styles.input} // Removed success glow here
+                    style={styles.input}
                     placeholder="Enter Code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -609,7 +590,7 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>New Password</label>
                   <input
                     type="password"
-                    style={styles.input} // Removed success glow here
+                    style={styles.input}
                     placeholder="New Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -622,7 +603,6 @@ const CoshAuth: React.FC = () => {
                     type="password"
                     style={{
                       ...styles.input,
-                      // Kept the red error glow for mismatched passwords
                       ...(password !== confirmPassword && confirmPassword ? styles.inputError : {})
                     }}
                     placeholder="Confirm"
@@ -673,21 +653,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: "#000",
     overflow: "hidden",
     position: "relative",
-  },
-  toast: {
-    position: "absolute",
-    top: "20px",
-    left: "50%",
-    backgroundColor: "#52c41a", // Green
-    color: "white",
-    padding: "12px 24px",
-    borderRadius: "8px",
-    fontWeight: "bold",
-    fontSize: "14px",
-    fontFamily: "sans-serif",
-    zIndex: 100, // Ensure it sits on top of everything
-    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-    textAlign: "center",
   },
   backgroundImage: {
     position: "absolute",
