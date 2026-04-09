@@ -5,7 +5,8 @@ import { AuthRequest } from "../middleware/authMiddleware";
 // CREATE AUDIT LOG
 export const createAuditLog = async (req: AuthRequest, res: Response) => {
     try {
-        const { targetName, activity, tableName } = req.body;
+        // NEW: Destructure 'changes' from req.body
+        const { targetName, activity, tableName, changes } = req.body;
 
         if (!targetName || !activity) {
             return res.status(400).json({ error: "Target name and activity are required" });
@@ -15,7 +16,8 @@ export const createAuditLog = async (req: AuthRequest, res: Response) => {
             user: req.user.id,
             targetName,
             tableName,
-            activity
+            activity,
+            changes // NEW: Pass it into the creation method
         });
 
         res.status(201).json(newAuditLog);

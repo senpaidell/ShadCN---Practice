@@ -21,6 +21,11 @@ interface AuditLog {
     _id: string;
     email: string;
   };
+  changes?: {
+    added?: number;
+    subtracted?: number;
+    field?: string;
+  };
 }
 
 export default function AuditLogsPage() {
@@ -167,6 +172,22 @@ export default function AuditLogsPage() {
                 <span className="text-xs font-semibold text-neutral-800 bg-neutral-400/30 border border-neutral-400/50 px-3 py-1.5 rounded-md w-max shrink-0 mt-1 md:mt-0">
                   {log.activity}
                 </span>
+
+                {/* NEW: Added / Subtracted Values Display */}
+                {log.changes && (
+                  <div className="flex items-center gap-2 shrink-0 mt-1 md:mt-0">
+                    {log.changes.added !== undefined && log.changes.added > 0 && (
+                      <span className="text-xs font-bold text-green-700 bg-green-500/20 border border-green-500/30 px-2 py-1 rounded-md">
+                        +{log.changes.added} {log.changes.field}
+                      </span>
+                    )}
+                    {log.changes.subtracted !== undefined && log.changes.subtracted > 0 && (
+                      <span className="text-xs font-bold text-red-700 bg-red-500/20 border border-red-500/30 px-2 py-1 rounded-md">
+                        -{log.changes.subtracted} {log.changes.field}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <span className="md:ml-auto text-neutral-600 text-sm mt-2 md:mt-0 shrink-0 text-right">

@@ -5,6 +5,12 @@ interface IAuditLog extends Document {
     targetName: string;
     tableName?: string;
     activity: string;
+    // NEW: Add the changes object
+    changes?: {
+        added?: number;
+        subtracted?: number;
+        field?: string;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -25,6 +31,12 @@ const AuditLogSchema = new Schema<IAuditLog>({
     activity: {
         type: String,
         required: true,
+    },
+    // NEW: Define the changes schema for MongoDB
+    changes: {
+        added: { type: Number },
+        subtracted: { type: Number },
+        field: { type: String }
     }
 },
     {
