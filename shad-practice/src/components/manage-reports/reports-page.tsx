@@ -435,7 +435,7 @@ export default function GeneratePage() {
                             <Button variant="secondary" onClick={handlePrint} disabled={isGenerating} className="cursor-pointer bg-neutral-100 text-neutral-900 hover:bg-neutral-200 border border-neutral-200">
                                 <Printer className="w-4 h-4 mr-2" /> Print Directly
                             </Button>
-                            <Button onClick={executeExport} disabled={isGenerating} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button onClick={executeExport} disabled={isGenerating} className="cursor-pointer bg-black hover:bg-neutral-600 text-white">
                                 {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileOutput className="w-4 h-4 mr-2" />}
                                 Download
                             </Button>

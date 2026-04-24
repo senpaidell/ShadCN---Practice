@@ -201,9 +201,15 @@ export function HomePage() {
                 </div>
 
                 <div className="flex flex-row items-center">
-                    <h5 className="text-neutral-400 sm:text-sm text-[12px]">Remaining Items Left</h5>
+                    <h5 className="text-neutral-400 sm:text-sm text-[12px] lg:text-[12px]">Remaining Items Left</h5>
 
                     <div className="ml-auto flex items-center gap-4">
+                        <h5 className="hidden lg:flex justify-center items-center gap-2 text-neutral-400 text-[12px]">
+                            Legend:
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-rose-400 rounded-full bg-gradient-to-t from-rose-400 to-red-500 text-xs flex items-center justify-center">&lt; 50%</h5>
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-emerald-400 rounded-full bg-linear-to-t from-emerald-400 to-emerald-800 text-xs flex items-center justify-center">&gt; 50%</h5>
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-sky-500 rounded-full bg-linear-to-t from-sky-500 to-indigo-700 text-xs flex items-center justify-center">&gt; 100%</h5>
+                        </h5>
                         <h5 className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[10px] sm:text-[14px]">{isLoadingTiles ? <Loader2 className="w-3 h-3 animate-spin inline" /> : `${tilesRemaining.length} / 10`}</h5>
                         <Link to={`/quickmode/${id}`}>
                             <Button className="cursor-pointer">Quick Mode</Button>
@@ -240,7 +246,7 @@ export function HomePage() {
                                                             ? "bg-neutral-600"
                                                             : items.percentage >= 50 && items.percentage <= 100
                                                                 ? "bg-linear-to-t from-emerald-400 to-emerald-800"
-                                                                : (items.percentage > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-linear-to-t from-purple-500 to-pink-700")
+                                                                : (items.percentage > 100 ? "bg-linear-to-t from-sky-500 to-indigo-700" : "bg-gradient-to-t from-rose-400 to-red-500")
                                                         }`}>
 
                                                         <button onClick={(e) => {
@@ -299,6 +305,13 @@ export function HomePage() {
                                 <CarouselNext className="absolute right-4 z-10 bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white" />
                             </Carousel>
                         </div>
+
+                        <h5 className="block lg:hidden flex justify-center items-center gap-2 text-neutral-400 text-[12px]">
+                            Legend:
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-rose-400 rounded-full bg-gradient-to-t from-rose-400 to-red-500 text-xs flex items-center justify-center">&lt; 50%</h5>
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-emerald-400 rounded-full bg-linear-to-t from-emerald-400 to-emerald-800 text-xs flex items-center justify-center">&gt; 50%</h5>
+                            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-sky-500 rounded-full bg-linear-to-t from-sky-500 to-indigo-700 text-xs flex items-center justify-center">&gt; 100%</h5>
+                        </h5>
 
                         <div className="flex-shrink-0 w-full xl:w-[280px]">
                             <AddTile onSaveSuccess={fetchTileItems} isLimitReached={tilesRemaining.length >= 10} />

@@ -172,11 +172,19 @@ export default function Notification() {
       </CardHeader>
 
       <CardContent className="pt-6">
-        <div className="mb-4">
-          <span className="text-neutral-400">Total Alerts: </span>
-          <span className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[14px]">
-            {isLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : alerts.length}
-          </span>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <span className="text-neutral-400">Total Alerts: </span>
+            <span className="mx-2 border border-neutral-800 px-4 py-1 bg-neutral-200 text-black rounded-[0.625rem] font-semibold text-[14px]">
+              {isLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : alerts.length}
+            </span>
+          </div>
+          <h5 className="my-2 flex justify-start items-center gap-2 text-neutral-400 text-sm">
+            <span className="lg:block hidden">Legend:</span>
+            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-rose-400 rounded-full bg-red-500 text-xs flex items-center justify-center">Critical</h5>
+            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-orange-500 rounded-full bg-orange-500 text-xs flex items-center justify-center">Warning</h5>
+            <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-yellow-500 rounded-full bg-yellow-500 text-xs flex items-center justify-center">Caution</h5>
+          </h5>
         </div>
 
         <div className="min-h-full">
@@ -199,20 +207,22 @@ export default function Notification() {
           )}
         </div>
 
-        {alerts.length > ITEMS_PER_PAGE && (
-          <div className="flex items-center justify-between mt-6">
-            <Button variant="outline" size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              disabled={safeCurrentPage === 1}>Back</Button>
-            <span className="text-sm text-muted-foreground">
-              Page {safeCurrentPage} of {totalPages}
-            </span>
-            <Button variant="outline" size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              disabled={safeCurrentPage === totalPages}>Next</Button>
-          </div>
-        )}
-      </CardContent>
-    </div>
+        {
+          alerts.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-between mt-6">
+              <Button variant="outline" size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={safeCurrentPage === 1}>Back</Button>
+              <span className="text-sm text-muted-foreground">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+              <Button variant="outline" size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={safeCurrentPage === totalPages}>Next</Button>
+            </div>
+          )
+        }
+      </CardContent >
+    </div >
   );
 }

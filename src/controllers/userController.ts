@@ -4,8 +4,15 @@ import { sendEmail } from "../utils/emailUtility";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AuthRequest } from "../middleware/authMiddleware";
+import { v2 as cloudinary } from "cloudinary";
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+    api_key: process.env.CLOUDINARY_API_KEY!,
+    api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 //SIGN UP
 export const signupUser = async (req: Request, res: Response): Promise<void> => {
@@ -160,8 +167,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        // Added 'email' to the select string so the frontend doesn't throw the "Email not found" alert
-        const users = await User.findById(req.user.id).select("firstName lastName email");
+        const users = await User.findById(req.user.id).select("firstName lastName email profilePictureUrl");
         res.status(200).json(users);
     } catch (error: any) {
         res.status(400).json({ error: error.message });
@@ -259,6 +265,43 @@ export const verifyPasswordChange = async (req: AuthRequest, res: Response): Pro
         await user.save();
 
         res.status(200).json({ message: "Password updated successfully" });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+export const updateProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.file) {
+            res.status(400).json({ error: "No image file provided" });
+            return;
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        // Convert the file buffer to a base64 string for Cloudinary
+        const b64 = Buffer.from(req.file.buffer).toString("base64");
+        const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+        // Upload to Cloudinary under a specific folder (e.g., cosh_avatars for the inventory system)
+        const result = await cloudinary.uploader.upload(dataURI, {
+            folder: "cosh_avatars",
+            width: 400,
+            crop: "scale"
+        });
+
+        // Save URL to database
+        user.profilePictureUrl = result.secure_url;
+        await user.save();
+
+        res.status(200).json({
+            message: "Profile picture updated successfully",
+            profilePictureUrl: user.profilePictureUrl
+        });
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }

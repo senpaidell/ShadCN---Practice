@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Loader2, Edit2 } from "lucide-react";
+import { User, Loader2, Edit2, Camera } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ import {
 
 export default function ProfilePage() {
     const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -35,6 +36,7 @@ export default function ProfilePage() {
     const [newPassword, setNewPassword] = useState("");
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [isProcessingReset, setIsProcessingReset] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const fetchUser = async () => {
         const token = localStorage.getItem("token");
@@ -178,6 +180,43 @@ export default function ProfilePage() {
         }
     };
 
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingImage(true);
+        try {
+            const token = localStorage.getItem("token");
+            const uploadData = new FormData();
+            uploadData.append("image", file);
+
+            // Note: When sending FormData, do NOT set "Content-Type". 
+            // The browser will automatically set it to multipart/form-data with the correct boundary.
+            const res = await fetch("https://coshts-backend.vercel.app/api/users/update-profile-picture", {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: uploadData,
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to upload image");
+
+            toast.success("Profile picture updated!");
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+        } catch (error: any) {
+            toast.error(error.message || "Failed to upload image");
+        } finally {
+            setIsUploadingImage(false);
+            if (fileInputRef.current) fileInputRef.current.value = ""; // Reset input
+        }
+    };
+
     const loggedInName = user ? `${user.firstName} ${user.lastName}` : "User";
 
     return (
@@ -190,9 +229,36 @@ export default function ProfilePage() {
                 <div className="lg:col-span-1">
                     <Card className="border-slate-200 shadow-sm py-8 flex flex-col items-center justify-center">
                         <CardHeader className="flex flex-col items-center justify-center w-full space-y-4">
-                            <div className="h-32 w-32 rounded-full bg-slate-100 flex items-center justify-center">
-                                <User className="h-16 w-16 text-slate-400" />
+
+                            {/* --- UPDATED AVATAR CONTAINER --- */}
+                            <div
+                                onClick={handleAvatarClick}
+                                className="relative h-32 w-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden cursor-pointer group border-2 border-transparent hover:border-slate-300 transition-all"
+                            >
+                                {isUploadingImage ? (
+                                    <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+                                ) : user?.profilePictureUrl ? (
+                                    <img src={user.profilePictureUrl} alt="Profile" className="h-full w-full object-cover" />
+                                ) : (
+                                    <User className="h-16 w-16 text-slate-400" />
+                                )}
+
+                                {/* Hover Overlay */}
+                                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Camera className="h-8 w-8 text-white mb-1" />
+                                    <span className="text-white text-xs font-medium">Upload</span>
+                                </div>
+
+                                {/* Hidden Input */}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
                             </div>
+
                             <div className="text-center space-y-2">
                                 <CardTitle className="text-2xl text-black font-bold uppercase tracking-wider leading-none">
                                     {isUserLoading ? "..." : loggedInName}

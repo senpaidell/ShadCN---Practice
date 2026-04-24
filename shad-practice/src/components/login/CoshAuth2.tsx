@@ -110,8 +110,9 @@ const CoshAuth: React.FC = () => {
       newErrors.lastName = "Last name must be between 2 and 30 characters.";
     }
 
-    if (!EMAIL_REGEX.test(email) || email.length > 50) {
-      newErrors.email = "Please enter a valid email (max 50 characters).";
+    // Extended email limit to 100 characters
+    if (!EMAIL_REGEX.test(email) || email.length > 100) {
+      newErrors.email = "Please enter a valid email (max 100 characters).";
     }
 
     if (password.length < 8 || !HAS_LETTER.test(password) || !HAS_NUMBER.test(password) || !HAS_SYMBOL.test(password)) {
@@ -181,7 +182,6 @@ const CoshAuth: React.FC = () => {
       setEmail("");
       setOtp("");
 
-      // Sonner Toast Notification!
       toast.success("Account successfully created! Please log in.");
 
     } catch (error) {
@@ -231,7 +231,6 @@ const CoshAuth: React.FC = () => {
       setConfirmPassword("");
       setOtp("");
 
-      // Sonner Toast Notification!
       toast.success("Password successfully reset! Please log in.");
 
     } catch (error) {
@@ -250,7 +249,7 @@ const CoshAuth: React.FC = () => {
   // --- Real-time Validation Checks for Green Glow (ONLY USED IN SIGNUP) ---
   const isFirstNameValid = firstName.trim().length >= 2 && firstName.trim().length <= 30;
   const isLastNameValid = lastName.trim().length >= 2 && lastName.trim().length <= 30;
-  const isEmailValid = EMAIL_REGEX.test(email) && email.length <= 50;
+  const isEmailValid = EMAIL_REGEX.test(email) && email.length <= 100;
   const isPasswordValid = password.length >= 8 && HAS_LETTER.test(password) && HAS_NUMBER.test(password) && HAS_SYMBOL.test(password);
   const isConfirmPasswordValid = confirmPassword.length > 0 && confirmPassword === password;
 
@@ -291,7 +290,7 @@ const CoshAuth: React.FC = () => {
                   <input
                     type="email"
                     placeholder="Enter Email"
-                    maxLength={50}
+                    maxLength={100} // Expanded limit
                     style={{
                       ...styles.input,
                       ...(loginError ? styles.inputError : {})
@@ -309,6 +308,7 @@ const CoshAuth: React.FC = () => {
                   <input
                     type="password"
                     placeholder="Enter Password"
+                    maxLength={30}
                     style={{
                       ...styles.input,
                       ...(loginError ? styles.inputError : {})
@@ -405,7 +405,7 @@ const CoshAuth: React.FC = () => {
                         <label style={styles.label}>Email</label>
                         <input
                           type="email"
-                          maxLength={50}
+                          maxLength={100} // Expanded limit
                           style={{
                             ...styles.input,
                             ...(errors.email ? styles.inputError : (email && isEmailValid ? styles.inputSuccess : {}))
@@ -417,7 +417,7 @@ const CoshAuth: React.FC = () => {
                             if (errors.email) setErrors({ ...errors, email: undefined });
                           }}
                         />
-                        {!errors.email && <span style={styles.helperText}>Valid email, max 50 characters.</span>}
+                        {!errors.email && <span style={styles.helperText}>Valid email, max 100 characters.</span>}
                         {errors.email && <span style={styles.errorText}>{errors.email}</span>}
                       </div>
 
@@ -425,6 +425,7 @@ const CoshAuth: React.FC = () => {
                         <label style={styles.label}>Password</label>
                         <input
                           type="password"
+                          maxLength={30}
                           style={{
                             ...styles.input,
                             ...(errors.password ? styles.inputError : (password && isPasswordValid ? styles.inputSuccess : {}))
@@ -444,6 +445,7 @@ const CoshAuth: React.FC = () => {
                         <label style={styles.label}>Confirm Password</label>
                         <input
                           type="password"
+                          maxLength={30}
                           style={{
                             ...styles.input,
                             ...(errors.confirmPassword ? styles.inputError : (confirmPassword && isConfirmPasswordValid ? styles.inputSuccess : {}))
@@ -528,7 +530,7 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>Email</label>
                   <input
                     type="email"
-                    maxLength={50}
+                    maxLength={100} // Expanded limit
                     style={styles.input}
                     placeholder="Enter Email"
                     value={email}
@@ -590,6 +592,7 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>New Password</label>
                   <input
                     type="password"
+                    maxLength={30}
                     style={styles.input}
                     placeholder="New Password"
                     value={password}
@@ -601,6 +604,7 @@ const CoshAuth: React.FC = () => {
                   <label style={styles.label}>Confirm Password</label>
                   <input
                     type="password"
+                    maxLength={30}
                     style={{
                       ...styles.input,
                       ...(password !== confirmPassword && confirmPassword ? styles.inputError : {})
