@@ -66,9 +66,12 @@ export function NavBar() {
                 <InputGroup className="w-fit sm:w-[25dvw] h-fit relative">
                     <InputGroupInput
                         placeholder="Search tables and items..."
+                        maxLength={50}
                         value={searchTerm}
                         onChange={(e) => {
-                            setSearchTerm(e.target.value);
+                            const val = e.target.value;
+                            if (val.length > 50) return; // Prevent pasting beyond limit
+                            setSearchTerm(val);
                             setIsDropdownOpen(true);
                         }}
                         onFocus={() => setIsDropdownOpen(true)}
@@ -133,10 +136,15 @@ export function NavBar() {
                         )}
                         <input
                             autoFocus
+                            maxLength={50}
                             className="flex-1 outline-none text-base bg-transparent"
                             placeholder="Search tables and items..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.length > 50) return; // Prevent pasting beyond limit
+                                setSearchTerm(val);
+                            }}
                         />
                         <span className="text-sm text-neutral-500 whitespace-nowrap">
                             {!isSearchLoading && debouncedSearchTerm ? `${totalResults} results` : ""}

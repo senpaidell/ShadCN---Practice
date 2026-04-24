@@ -116,7 +116,7 @@ export function PieChartComponent() {
         const data = [
             { name: "Critical (<20%)", amount: critical, fill: "#EF4444" },
             { name: "Running Low (<50%)", amount: runningLow, fill: "#F97316" },
-            { name: "Healthy (50-100%)", amount: healthy, fill: "#22C55E" },
+            { name: "Sufficient (50-100%)", amount: healthy, fill: "#22C55E" },
             { name: "Overstock (>100%)", amount: overstock, fill: "#3B82F6" },
         ].filter(d => d.amount > 0);
 

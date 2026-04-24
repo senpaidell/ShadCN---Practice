@@ -29,6 +29,8 @@ import { FilterItem } from "./inventory-buttons/filter-item";
 import { TableSelector } from "./inventory-buttons/table-selector";
 import { useLogAudit } from "@/hooks/useLogAudit";
 
+const DEFAULT_UNITS = ["L", "mL", "g", "kg", "oz", "lbs"];
+
 export default function EachTable() {
     const { id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -39,9 +41,7 @@ export default function EachTable() {
 
     const [tableInstance, setTableInstance] = useState<any>(null);
 
-    const [saveStatus, setSaveStatus] = useState<"loading" | "success" | "error">(
-        "loading",
-    );
+    const [saveStatus, setSaveStatus] = useState<"loading" | "success" | "error">("loading");
     const [statusMessage, setStatusMessage] = useState("");
     const [isStatusModalOpen, setIsStatusModelOpen] = useState(false);
 
@@ -61,10 +61,8 @@ export default function EachTable() {
     useEffect(() => {
         if (highlightId) {
             const timer = setTimeout(() => {
-                // Updated to 60.5 seconds to ensure the animation finishes
                 setSearchParams({}, { replace: true });
             }, 60500);
-
             return () => clearTimeout(timer);
         }
     }, [highlightId, setSearchParams]);
@@ -72,16 +70,13 @@ export default function EachTable() {
     const { data: tableData, isLoading: isTableLoading } = useQuery({
         queryKey: ["table", id],
         queryFn: async () => {
-            const res = await fetch(
-                `https://coshts-backend.vercel.app/api/tables/${id}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+            const res = await fetch(`https://coshts-backend.vercel.app/api/tables/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-            );
+            });
             if (!res.ok) throw new Error("Failed to fetch table details");
             return res.json();
         },
@@ -91,16 +86,13 @@ export default function EachTable() {
     const { data: rows = [], isLoading: isItemsLoading } = useQuery({
         queryKey: ["items", id],
         queryFn: async () => {
-            const res = await fetch(
-                `https://coshts-backend.vercel.app/api/items/${id}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-            );
+            });
             if (!res.ok) throw new Error("Failed to fetch items");
             return res.json();
         },
@@ -129,10 +121,7 @@ export default function EachTable() {
             setStatusMessage("Saving your new item...");
         },
         onSuccess: (newItem) => {
-            queryClient.setQueryData(["items", id], (oldData: any) => [
-                ...(oldData || []),
-                newItem,
-            ]);
+            queryClient.setQueryData(["items", id], (oldData: any) => [...(oldData || []), newItem]);
             setSaveStatus("success");
             setStatusMessage("Item has been added successfully.");
         },
@@ -153,17 +142,14 @@ export default function EachTable() {
 
     const editItemMutation = useMutation({
         mutationFn: async () => {
-            const res = await fetch(
-                `https://coshts-backend.vercel.app/api/items/${editingItem._id}`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify(editFormData),
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${editingItem._id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-            );
+                body: JSON.stringify(editFormData),
+            });
             if (!res.ok) throw new Error("Failed to update item");
             return res.json();
         },
@@ -173,11 +159,9 @@ export default function EachTable() {
             );
             toast.success("Item updated successfully.");
 
-            // NEW: Figure out exactly what was changed
             let oldVals: string[] = [];
             let newVals: string[] = [];
 
-            // Loop through the form data to find differences
             Object.keys(editFormData).forEach((key) => {
                 if (editFormData[key] !== editingItem[key] && editingItem[key] !== undefined) {
                     oldVals.push(`${key}: ${editingItem[key]}`);
@@ -185,7 +169,6 @@ export default function EachTable() {
                 }
             });
 
-            // If something actually changed, log it!
             if (oldVals.length > 0) {
                 logAudit.mutate({
                     targetName: editingItem.name,
@@ -205,13 +188,10 @@ export default function EachTable() {
 
     const deleteItemMutation = useMutation({
         mutationFn: async () => {
-            const res = await fetch(
-                `https://coshts-backend.vercel.app/api/items/${deletingItem._id}`,
-                {
-                    method: "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                },
-            );
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${deletingItem._id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
             if (!res.ok) throw new Error("Failed to delete item");
             return deletingItem._id;
         },
@@ -232,20 +212,17 @@ export default function EachTable() {
 
     const stockItemMutation = useMutation({
         mutationFn: async () => {
-            const res = await fetch(
-                `https://coshts-backend.vercel.app/api/items/${stockItem._id}/stock`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        action: actionType,
-                        quantity: Number(quantity),
-                    }),
+            const res = await fetch(`https://coshts-backend.vercel.app/api/items/${stockItem._id}/stock`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-            );
+                body: JSON.stringify({
+                    action: actionType,
+                    quantity: Number(quantity),
+                }),
+            });
             if (!res.ok) throw new Error("Failed to update stock");
             return res.json();
         },
@@ -277,13 +254,16 @@ export default function EachTable() {
 
     const openEditModal = (item: any) => {
         setEditingItem(item);
-        const initialData: any = { name: item.name };
+        const initialData: any = {
+            name: item.name,
+            volumeUnit: item.volumeUnit || "mL" // Capture existing unit here
+        };
         const columnNames = tableData.attributes.map((attr: any) =>
             typeof attr === "string" ? attr : attr.name,
         );
         columnNames.forEach((attrName: string) => {
             if (attrName !== "Name") {
-                initialData[getDbKey(attrName)] = item[getDbKey(attrName)] || "";
+                initialData[getDbKey(attrName)] = item[getDbKey(attrName)] ?? "";
             }
         });
         setEditFormData(initialData);
@@ -342,6 +322,8 @@ export default function EachTable() {
         actionType === "in"
             ? currentStockVal + numQuantity
             : currentStockVal - numQuantity;
+
+    const editNameValStr = String(editFormData.name ?? "");
 
     return (
         <>
@@ -432,60 +414,109 @@ export default function EachTable() {
                         </DialogHeader>
 
                         <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                                 <label className="text-sm font-medium text-gray-700">
                                     Item Name
                                 </label>
                                 <Input
-                                    value={editFormData.name || ""}
-                                    onChange={(e) =>
-                                        setEditFormData({ ...editFormData, name: e.target.value })
-                                    }
+                                    maxLength={30}
+                                    value={editNameValStr}
+                                    onChange={(e) => {
+                                        let val = e.target.value;
+                                        if (val.length > 30) return;
+
+                                        // Allow periods now
+                                        val = val.replace(/[^a-zA-Z0-9\s.]/g, "");
+
+                                        setEditFormData({ ...editFormData, name: val });
+                                    }}
                                     className="bg-white border-gray-300 text-black focus-visible:ring-gray-400"
                                 />
+                                <div className="flex justify-between items-start mt-1">
+                                    <p className="text-[11px] text-gray-500">
+                                        Only letters, numbers, spaces, and periods allowed.
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 font-medium">
+                                        {editNameValStr.length}/30
+                                    </p>
+                                </div>
                             </div>
 
                             {columnNames
                                 .filter((name: string) => name !== "Name")
                                 .map((attrName: string) => {
                                     const dbKey = getDbKey(attrName);
+                                    const dbKeyLower = dbKey.toLowerCase();
 
-                                    // Check if this field is meant for dates
-                                    const isDateField = dbKey.toLowerCase().includes("date") || attrName.toLowerCase().includes("expiration");
+                                    const isDateField = dbKeyLower.includes("date") || attrName.toLowerCase().includes("expiration");
+                                    const isNumberField = dbKeyLower.includes("stock") || dbKeyLower.includes("level") || dbKeyLower === "volume";
+                                    const inputType = isDateField ? "date" : isNumberField ? "number" : "text";
 
-                                    // HTML date inputs strictly require YYYY-MM-DD format.
                                     const inputValue = isDateField && editFormData[dbKey]
                                         ? String(editFormData[dbKey]).split("T")[0]
-                                        : (editFormData[dbKey] || "");
+                                        : String(editFormData[dbKey] ?? "");
 
                                     return (
-                                        <div key={dbKey} className="space-y-2">
+                                        <div key={dbKey} className="space-y-1 mt-2">
                                             <label className="text-sm font-medium text-gray-700">
                                                 {attrName}
                                             </label>
-                                            <Input
-                                                type={
-                                                    isDateField
-                                                        ? "date"
-                                                        : dbKey.includes("Stock") || dbKey === "volume"
-                                                            ? "number"
-                                                            : "text"
-                                                }
-                                                value={inputValue}
-                                                onChange={(e) =>
-                                                    setEditFormData({
-                                                        ...editFormData,
-                                                        [dbKey]: e.target.value,
-                                                    })
-                                                }
-                                                className="bg-white border-gray-300 text-black focus-visible:ring-gray-400"
-                                            />
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    type={inputType}
+                                                    maxLength={inputType === "text" ? 30 : undefined}
+                                                    value={inputValue}
+                                                    onChange={(e) => {
+                                                        let val = e.target.value;
+
+                                                        if (val.length > 30) return;
+
+                                                        if (inputType === "text") {
+                                                            val = val.replace(/[^a-zA-Z0-9\s.]/g, "");
+                                                        }
+
+                                                        setEditFormData({
+                                                            ...editFormData,
+                                                            [dbKey]: val,
+                                                        });
+                                                    }}
+                                                    className="bg-white border-gray-300 text-black focus-visible:ring-gray-400 flex-1"
+                                                />
+
+                                                {/* Render volume unit editor inline when dbKey matches 'volume' */}
+                                                {dbKeyLower === "volume" && (
+                                                    <div className="w-24">
+                                                        <Input
+                                                            list="edit-unit-options"
+                                                            value={editFormData.volumeUnit || ""}
+                                                            onChange={(e) =>
+                                                                setEditFormData({ ...editFormData, volumeUnit: e.target.value })
+                                                            }
+                                                            placeholder="Unit"
+                                                            className="bg-white border-gray-300 text-black focus-visible:ring-gray-400 h-full"
+                                                        />
+                                                        <datalist id="edit-unit-options">
+                                                            {DEFAULT_UNITS.map(u => <option key={u} value={u} />)}
+                                                        </datalist>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex justify-between items-start mt-1">
+                                                <p className="text-[11px] text-gray-500">
+                                                    {inputType === "text" && "Only letters, numbers, spaces, and periods allowed."}
+                                                    {inputType === "number" && "Only numbers allowed."}
+                                                    {inputType === "date" && "Please select a valid date."}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500 font-medium">
+                                                    {inputValue.length}/30
+                                                </p>
+                                            </div>
                                         </div>
                                     );
                                 })}
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="mt-2">
                             <Button
                                 variant="secondary"
                                 onClick={() => setIsEditModalOpen(false)}

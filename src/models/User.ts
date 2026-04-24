@@ -1,4 +1,4 @@
-import mongoose, {Document, Schema} from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 
@@ -7,6 +7,7 @@ export const UserSchemaZod = z.object({
     lastName: z.string().min(3, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email format"),
     password: z.string().min(8, "Password must be at least 8 characters"),
+    profilePictureUrl: z.string().optional()
 });
 
 export type UserType = z.infer<typeof UserSchemaZod>
@@ -44,7 +45,8 @@ const UserSchema = new Schema(
         },
         otpExpires: {
             type: Date
-        }
+        },
+        profilePictureUrl: { type: String, default: "" }
     },
     {
         timestamps: true,
@@ -57,4 +59,4 @@ UserSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
 })
 
-export const User = mongoose.models.User ||mongoose.model<IUserModel>("User", UserSchema);
+export const User = mongoose.models.User || mongoose.model<IUserModel>("User", UserSchema);
