@@ -23,6 +23,23 @@ export function NavBar() {
     const { lowStockItems } = useLowStockItems();
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+    // --- NEW: Fetch User Data for Profile Picture ---
+    const { data: user } = useQuery({
+        queryKey: ["users"],
+        queryFn: async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return null;
+            const res = await fetch("https://coshts-backend.vercel.app/api/users/getusers", {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch user");
+            return res.json();
+        },
+    });
+
     const { data: results, isFetching } = useQuery({
         queryKey: ['globalSearch', debouncedSearchTerm],
         queryFn: async () => {
@@ -112,15 +129,24 @@ export function NavBar() {
                     className="p-1 rounded-[0.625rem] flex items-center justify-center transition-all duration-500 ease-in-out hover:bg-black hover:text-white"
                 >
                     <Badge badgeContent={lowStockItems.length} color="primary">
-                        <MailIcon sx={{ fontSize: 26 }} />
+                        <MailIcon sx={{ fontSize: 28 }} />
                     </Badge>
                 </Link>
 
                 <Link
                     to="/profile"
-                    className="p-1 rounded-[0.625rem] flex items-center justify-center transition-all duration-500 ease-in-out hover:bg-black hover:text-white"
+                    className="p-1 rounded-[0.625rem] flex items-center justify-center transition-all duration-500 ease-in-out hover:bg-black hover:text-white overflow-hidden"
                 >
-                    <CircleUser size={26} />
+                    {/* --- UPDATED: Profile Picture Rendering --- */}
+                    {user?.profilePictureUrl ? (
+                        <img
+                            src={user.profilePictureUrl}
+                            alt="Profile"
+                            className="w-[32px] h-[32px] rounded-full object-cover"
+                        />
+                    ) : (
+                        <CircleUser size={26} />
+                    )}
                 </Link>
             </div>
 
