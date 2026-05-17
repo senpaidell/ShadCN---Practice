@@ -329,7 +329,7 @@ const CoshAuth: React.FC = () => {
                       <div style={{ marginTop: "6px" }}>
                         <span style={{ color: "#bbb", fontSize: "11px" }}>Too many failed attempts. </span>
                         <span
-                          onClick={() => { switchMode("forgot-email"), setPassword("") }}
+                          onClick={() => { switchMode("forgot-email"); setPassword(""); }}
                           style={{ ...styles.link, color: "#ff4d4f", cursor: "pointer" }}
                         >
                           Reset your password?
@@ -339,16 +339,35 @@ const CoshAuth: React.FC = () => {
                   </div>
                 )}
 
-                <button type="submit" disabled={isLoading} style={styles.mainBtn}>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  style={styles.mainBtn}
+                  whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   {isLoading ? "LOGGING IN..." : "LOG IN"}
-                </button>
-                <div style={styles.footerLinks}>
-                  <span onClick={() => { switchMode("signup"), setEmail(""), setPassword(""), setConfirmPassword(""), setFirstName(""), setLastName("") }} style={styles.link}>
+                </motion.button>
+
+                <div style={styles.buttonGroup}>
+                  <motion.button
+                    type="button"
+                    onClick={() => { switchMode("signup"); setEmail(""); setPassword(""); setConfirmPassword(""); setFirstName(""); setLastName(""); }}
+                    style={{ ...styles.secondaryBtn, ...styles.btnGroupLeft }}
+                    whileHover={{ backgroundColor: "#333" }}
+                    whileTap={{ backgroundColor: "#111" }}
+                  >
                     SIGN UP
-                  </span>
-                  <span onClick={() => { switchMode("forgot-email"), setEmail(""), setPassword("") }} style={styles.link}>
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={() => { switchMode("forgot-email"); setEmail(""); setPassword(""); }}
+                    style={{ ...styles.secondaryBtn, ...styles.btnGroupRight }}
+                    whileHover={{ backgroundColor: "#333" }}
+                    whileTap={{ backgroundColor: "#111" }}
+                  >
                     FORGOT PASSWORD
-                  </span>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -460,16 +479,26 @@ const CoshAuth: React.FC = () => {
                         {errors.confirmPassword && <span style={styles.errorText}>{errors.confirmPassword}</span>}
                       </div>
 
-                      <button type="submit" disabled={isLoading} style={styles.mainBtn}>
+                      <motion.button
+                        type="submit"
+                        disabled={isLoading}
+                        style={styles.mainBtn}
+                        whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                        whileTap={{ scale: 0.98 }}
+                      >
                         {isLoading ? "CREATING ACCOUNT..." : "SIGN UP"}
-                      </button>
-                      <div style={{ textAlign: "center", marginTop: "15px" }}>
-                        <span
-                          onClick={() => { switchMode("login"), setEmail(""), setPassword(""), setConfirmPassword("") }}
-                          style={styles.link}
+                      </motion.button>
+
+                      <div style={styles.footerLinksCenter}>
+                        <motion.button
+                          type="button"
+                          onClick={() => { switchMode("login"); setEmail(""); setPassword(""); setConfirmPassword(""); }}
+                          style={styles.secondaryBtn}
+                          whileHover={{ backgroundColor: "#333", scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                         >
                           LOG IN
-                        </span>
+                        </motion.button>
                       </div>
                     </div>
                   </form>
@@ -506,13 +535,25 @@ const CoshAuth: React.FC = () => {
                     required
                   />
                 </div>
-                <button type="submit" disabled={isLoading} style={styles.mainBtn}>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  style={styles.mainBtn}
+                  whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   {isLoading ? "VERIFYING..." : "VERIFY CODE"}
-                </button>
-                <div style={styles.footerLinks}>
-                  <span onClick={() => switchMode("signup")} style={styles.link}>
+                </motion.button>
+                <div style={styles.footerLinksCenter}>
+                  <motion.button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    style={styles.secondaryBtn}
+                    whileHover={{ backgroundColor: "#333", scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     BACK TO SIGN UP
-                  </span>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -538,13 +579,25 @@ const CoshAuth: React.FC = () => {
                     required
                   />
                 </div>
-                <button type="submit" disabled={isLoading} style={styles.mainBtn}>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  style={styles.mainBtn}
+                  whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   {isLoading ? "SENDING..." : "SEND OTP"}
-                </button>
-                <div style={styles.footerLinks}>
-                  <span onClick={() => switchMode("login")} style={styles.link}>
+                </motion.button>
+                <div style={styles.footerLinksCenter}>
+                  <motion.button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    style={styles.secondaryBtn}
+                    whileHover={{ backgroundColor: "#333", scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     BACK TO LOGIN
-                  </span>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -571,13 +624,24 @@ const CoshAuth: React.FC = () => {
                     required
                   />
                 </div>
-                <button type="submit" style={styles.mainBtn}>
+                <motion.button
+                  type="submit"
+                  style={styles.mainBtn}
+                  whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   CONTINUE
-                </button>
-                <div style={styles.footerLinks}>
-                  <span onClick={() => switchMode("login")} style={styles.link}>
+                </motion.button>
+                <div style={styles.footerLinksCenter}>
+                  <motion.button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    style={styles.secondaryBtn}
+                    whileHover={{ backgroundColor: "#333", scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     BACK TO LOGIN
-                  </span>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -618,17 +682,25 @@ const CoshAuth: React.FC = () => {
                     <span style={styles.errorText}>Passwords do not match</span>
                   )}
                 </div>
-                <button
+                <motion.button
                   type="submit"
                   disabled={isLoading || (password !== confirmPassword)}
                   style={styles.mainBtn}
+                  whileHover={{ scale: 1.02, backgroundColor: "#f0f0f0" }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   {isLoading ? "UPDATING..." : "UPDATE PASSWORD"}
-                </button>
-                <div style={styles.footerLinks}>
-                  <span onClick={() => switchMode("login")} style={styles.link}>
+                </motion.button>
+                <div style={styles.footerLinksCenter}>
+                  <motion.button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    style={styles.secondaryBtn}
+                    whileHover={{ backgroundColor: "#333", scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     BACK TO LOGIN
-                  </span>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -763,10 +835,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "16px",
     fontFamily: "sans-serif",
   },
-  footerLinks: {
+  buttonGroup: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginTop: "15px",
+  },
+  footerLinksCenter: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "15px",
+  },
+  secondaryBtn: {
+    backgroundColor: "#222",
+    color: "#ddd",
+    border: "1px solid #444",
+    padding: "8px 16px",
+    borderRadius: "4px",
+    fontSize: "11px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    textTransform: "uppercase",
+    fontFamily: "sans-serif",
+    transition: "all 0.2s ease",
+  },
+  btnGroupLeft: {
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    borderRight: "none", // Prevent double borders in the middle
+  },
+  btnGroupRight: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
   },
   link: {
     color: "#bbb",

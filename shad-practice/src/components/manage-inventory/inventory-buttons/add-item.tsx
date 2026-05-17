@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useLogAudit } from "@/hooks/useLogAudit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const CATEGORIES = ["Flour", "Baking Soda", "Eggs", "Fat", "Sugar", "Flavoring", "Chocolate", "Custom"];
+const CATEGORIES = ["Cookies", "Coffee", "Custom"];
 const DEFAULT_UNITS = ["L", "mL", "g", "kg", "oz", "lbs"];
 
 export function AddItem({ tableData, existingItems, onSave }: { tableData: any, existingItems: any[], onSave: any }) {
@@ -44,15 +44,25 @@ export function AddItem({ tableData, existingItems, onSave }: { tableData: any, 
     const baseCategory = category === "Custom" ? customCategory : category;
     const finalCategory = baseCategory.trim() || "Uncategorized";
 
+    const currentStockVal = Number(dynamicValues["Current Stock"]) || 0;
+    const expirationVal = dynamicValues["Expiration"];
+
     const itemData = {
       tableId: tableData._id,
       name: name.trim(),
       category: finalCategory,
       volumeUnit: volumeUnit,
-      currentStock: Number(dynamicValues["Current Stock"]) || 0,
+      currentStock: currentStockVal, // Kept for backwards compatibility
       parLevel: Number(dynamicValues["Par Level"]) || 0,
       volume: Number(dynamicValues["Volume"]) || 0,
-      expiration: dynamicValues["Expiration"] || undefined,
+      expiration: expirationVal || undefined, // Kept for backwards compatibility
+
+      // NEW: Pre-package the first batch for the new backend schema
+      batches: (currentStockVal > 0 && expirationVal) ? [{
+        quantity: currentStockVal,
+        expirationDate: expirationVal
+      }] : [],
+
       preventDuplicate
     }
 

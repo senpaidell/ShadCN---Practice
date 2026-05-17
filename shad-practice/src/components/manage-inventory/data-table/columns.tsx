@@ -69,8 +69,40 @@ export const createColumns = (
                     if (attrName === "Volume" && val) {
                         return `${val} ${row.original.volumeUnit || ""}`;
                     }
-                    if (attrName === "Expiration" && val) {
-                        return new Date(val).toLocaleDateString();
+
+                    // NEW: Smart Expiration Column UI
+                    if (attrName === "Expiration") {
+                        const batches = row.original.batches;
+
+                        // Check if the new backend batches array exists
+                        if (batches && Array.isArray(batches) && batches.length > 0) {
+                            // Only look at batches that have stock, sorted by nearest expiration
+                            const validBatches = batches.filter((b: any) => b.quantity > 0);
+                            if (validBatches.length > 0) {
+                                const sortedBatches = validBatches.sort((a: any, b: any) =>
+                                    new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime()
+                                );
+
+                                const nearestDate = new Date(sortedBatches[0].expirationDate).toLocaleDateString();
+
+                                return (
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">{nearestDate}</span>
+                                        {sortedBatches.length > 1 && (
+                                            <span className="text-[10px] text-gray-500 font-semibold" title="Multiple expiration dates exist">
+                                                (+{sortedBatches.length - 1} more)
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            }
+                        }
+
+                        // Fallback to old format if batches array isn't implemented yet
+                        if (val) {
+                            return new Date(val).toLocaleDateString();
+                        }
+                        return "-";
                     }
                     return val ?? "-";
                 },
@@ -140,7 +172,19 @@ export const createColumns = (
                 }
             }
 
-            const expirationDate = row.original.expiration;
+
+
+            let expirationDate = row.original.expiration;
+            if (row.original.batches && Array.isArray(row.original.batches) && row.original.batches.length > 0) {
+                const validBatches = row.original.batches.filter((b: any) => b.quantity > 0);
+                if (validBatches.length > 0) {
+                    const sortedBatches = validBatches.sort((a: any, b: any) =>
+                        new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime()
+                    );
+                    expirationDate = sortedBatches[0].expirationDate;
+                }
+            }
+
             let expirationBadge = null;
 
             if (expirationDate) {
