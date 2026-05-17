@@ -57,6 +57,7 @@ export default function EachTable() {
     const [stockItem, setStockItem] = useState<any>(null);
     const [actionType, setActionType] = useState<"in" | "out">("in");
     const [quantity, setQuantity] = useState<number | string>(1);
+    const [batchExpiration, setBatchExpiration] = useState("");
 
     useEffect(() => {
         if (highlightId) {
@@ -221,6 +222,7 @@ export default function EachTable() {
                 body: JSON.stringify({
                     action: actionType,
                     quantity: Number(quantity),
+                    expirationDate: actionType === "in" && batchExpiration ? batchExpiration : undefined
                 }),
             });
             if (!res.ok) throw new Error("Failed to update stock");
@@ -279,6 +281,7 @@ export default function EachTable() {
         setStockItem(item);
         setActionType("in");
         setQuantity(1);
+        setBatchExpiration("");
         setIsStockModalOpen(true);
     };
 
@@ -728,6 +731,20 @@ export default function EachTable() {
                                     </Button>
                                 </div>
                             </div>
+
+                            {actionType === "in" && (
+                                <div className="flex flex-col items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                                    <span className="text-sm font-semibold text-gray-700">
+                                        Expiration Date for this batch (Optional)
+                                    </span>
+                                    <Input
+                                        type="date"
+                                        value={batchExpiration}
+                                        onChange={(e) => setBatchExpiration(e.target.value)}
+                                        className="h-12 w-full max-w-[200px] text-center border-gray-300 bg-white text-black focus-visible:ring-gray-400 shadow-sm"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <DialogFooter className="mt-2">

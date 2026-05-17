@@ -1,5 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// NEW: Define what a batch looks like
+interface IBatch {
+    quantity: number;
+    expirationDate?: Date;
+}
+
 interface IItem extends Document {
     tableId: mongoose.Types.ObjectId;
     name: string;
@@ -8,7 +14,8 @@ interface IItem extends Document {
     volumeUnit?: string;
     currentStock: number;
     parLevel: number;
-    expiration?: Date;
+    expiration?: Date; // Keeping this for backward compatibility
+    batches: IBatch[]; // NEW: Array to hold multiple batches
     user: mongoose.Types.ObjectId;
 }
 
@@ -21,10 +28,10 @@ const ItemSchema = new Schema<IItem>({
     volumeUnit: { type: String, default: "" },
     currentStock: { type: Number, default: 0 },
     parLevel: { type: Number, default: 0 },
-    expiration: { type: Date }
+    expiration: { type: Date },
+    // NEW: Default to an empty array so old items don't break
+    batches: { type: [{ quantity: Number, expirationDate: Date }], default: [] }
 }, { timestamps: true });
-
-// export const Item = mongoose.models.Item || mongoose.model<IItem>("Item", ItemSchema);
 
 export const Item =
     (mongoose.models.Item as mongoose.Model<IItem>) ||
