@@ -306,7 +306,7 @@ export function HomePage() {
                             </Carousel>
                         </div>
 
-                        <h5 className="block lg:hidden flex justify-center items-center gap-2 text-neutral-400 text-[12px]">
+                        <h5 className="block lg:hidden flex justify-center   items-center gap-2 text-neutral-400 text-[12px]">
                             Legend:
                             <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-rose-400 rounded-full bg-gradient-to-t from-rose-400 to-red-500 text-xs flex items-center justify-center">&lt; 50%</h5>
                             <h5 className="border-1 px-4 py-1 font-bold text-neutral-200 border-emerald-400 rounded-full bg-linear-to-t from-emerald-400 to-emerald-800 text-xs flex items-center justify-center">&gt; 50%</h5>

@@ -27,7 +27,7 @@ import { Input } from "../ui/input";
 interface InventoryTable {
     _id: string;
     name: string;
-    attributes: string[];
+    attributes: string[]; 
     icon: any;
     createdAt: string;
     url: string;
