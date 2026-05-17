@@ -6,7 +6,7 @@ import { toast } from "sonner"; // Imported sonner
 // Assets
 import forgotBg from "@/assets/forgot-bg.jpg";
 import loginBg from "@/assets/login-bg.jpg";
-import logoImage from "@/assets/logo.jpg";
+import logoImage from "@/assets/DP_4-transparent3.png";
 import signupBg from "@/assets/signup-bg.jpg";
 
 type AuthMode =
